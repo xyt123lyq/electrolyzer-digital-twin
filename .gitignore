@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Electron release
+release/
+
+# Debug screenshots (root)
+*.png
+--full-page
+
+# Tools temp files
+_tools/*.png
+_tools/frames/
+_tools/chrome_log.txt
+_tools/test_shots/
+_tools/spec_docx/
+_tools/tcp_doc/
+
+# Claude Code local settings
+.claude/
+
+# SQLite MCP database
+mydatabase.db
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env
+.env
+.env.local

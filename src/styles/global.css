@@ -1,0 +1,175 @@
+:root {
+  --bg-deep: #02101e;
+  --bg-panel: rgba(8, 30, 56, 0.55);
+  --bg-panel-strong: rgba(10, 40, 75, 0.78);
+  --border-cyan: rgba(80, 180, 255, 0.35);
+  --border-cyan-strong: rgba(80, 180, 255, 0.75);
+  --text-main: #d6efff;
+  --text-dim: #6e9cc4;
+  --text-accent: #5fdfff;
+  --accent: #29b6ff;
+  --accent-soft: #1976d2;
+  --warn: #ffae42;
+  --good: #5ad17a;
+  --danger: #ff5e7e;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at 30% 10%, rgba(20, 70, 130, 0.45), transparent 55%),
+    radial-gradient(ellipse at 80% 90%, rgba(10, 50, 90, 0.45), transparent 60%),
+    linear-gradient(180deg, #02101e 0%, #010812 100%);
+  color: var(--text-main);
+  font-family: "Microsoft Yahei", "PingFang SC", "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+/* Panel base — frosted, cyan-edged industrial look */
+.panel {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-cyan);
+  border-radius: 4px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow:
+    0 0 0 1px rgba(40, 120, 200, 0.15) inset,
+    0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.panel::before,
+.panel::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--accent);
+  pointer-events: none;
+}
+.panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.panel::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: clamp(5px, 0.55vw, 9px) clamp(8px, 0.85vw, 14px);
+  font-size: clamp(11px, 0.85vw, 14px);
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--text-accent);
+  border-bottom: 1px solid rgba(80, 180, 255, 0.18);
+  background: linear-gradient(90deg, rgba(40, 140, 220, 0.18), transparent);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.panel-title::before {
+  content: "";
+  width: 4px;
+  height: clamp(10px, 1vw, 14px);
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.panel-body {
+  padding: clamp(6px, 0.7vw, 12px) clamp(8px, 0.85vw, 14px);
+}
+
+/* Buttons */
+.btn {
+  background: rgba(20, 70, 130, 0.35);
+  color: var(--text-accent);
+  border: 1px solid var(--border-cyan);
+  padding: 6px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: all .25s;
+}
+.btn:hover {
+  background: rgba(40, 140, 220, 0.55);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(60, 170, 255, 0.5);
+}
+.btn.active {
+  background: linear-gradient(180deg, rgba(60, 170, 255, 0.65), rgba(20, 90, 160, 0.65));
+  color: #fff;
+  box-shadow: 0 0 14px rgba(80, 200, 255, 0.7);
+}
+
+/* Scrollbars (chromium) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(60, 140, 220, 0.5); border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* HUD label used over the 3D scene */
+.hud-label {
+  position: absolute;
+  transform: translate(0, -50%);
+  pointer-events: none;
+  color: var(--text-accent);
+  font-size: 12px;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+.hud-label .hud-arrow {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+  position: absolute;
+  left: -90px;
+  top: 50%;
+  width: 90px;
+  box-shadow: 0 0 6px var(--accent);
+}
+.hud-label .hud-card {
+  background: rgba(5, 25, 50, 0.85);
+  border: 1px solid var(--border-cyan-strong);
+  padding: 8px 12px;
+  min-width: 160px;
+  border-radius: 2px;
+  box-shadow: 0 0 16px rgba(40, 140, 220, 0.4);
+}
+.hud-label .hud-title {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.hud-label .hud-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.hud-label .hud-row span:last-child {
+  color: #ffdf6c;
+  font-weight: 600;
+}
+
+/* Glow text */
+.glow-text {
+  color: #fff;
+  text-shadow: 0 0 8px var(--accent), 0 0 16px rgba(80, 180, 255, 0.55);
+}
+
+/* Tag / status dot */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 6px currentColor;
+}
+.dot.ok    { color: var(--good); background: var(--good); }
+.dot.warn  { color: var(--warn); background: var(--warn); }
+.dot.bad   { color: var(--danger); background: var(--danger); }
+.dot.mock  { color: var(--accent); background: var(--accent); }

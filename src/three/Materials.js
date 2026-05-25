@@ -1,0 +1,281 @@
+import * as THREE from 'three'
+
+export const MaterialPresets = {
+
+  // BOM #1/#3/#4 螺栓杆 — 实物: 不锈钢光亮杆, 金属光泽
+  bolt() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x888890,
+      metalness: 0.90,
+      roughness: 0.35,
+      envMapIntensity: 1.2,
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.3
+    })
+  },
+
+  // 螺柱轴身 — 实物: 黑色氧化处理 (照片 #8)
+  boltShaft() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x1a1c20,
+      metalness: 0.82,
+      roughness: 0.55,
+      envMapIntensity: 0.7,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.7
+    })
+  },
+
+  // BOM #2 不锈钢螺母 — 六角锻造面, 镀铬光泽
+  nut() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xa0a5ab,
+      metalness: 0.92,
+      roughness: 0.25,
+      envMapIntensity: 1.4,
+      clearcoat: 0.2,
+      clearcoatRoughness: 0.2
+    })
+  },
+
+  // BOM #5/#11 紫铜端盖 — 实物: 粉玫瑰金/浅粉铜色, 磨砂表面
+  endplate() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xe8b4a0,
+      metalness: 0.82,
+      roughness: 0.32,
+      envMapIntensity: 1.3,
+      clearcoat: 0.2,
+      clearcoatRoughness: 0.25,
+      emissive: 0x100504,
+      emissiveIntensity: 0.04,
+      sheen: 0.1,
+      sheenColor: new THREE.Color(0xffe4d4),
+      sheenRoughness: 0.4
+    })
+  },
+
+  copperTerminal() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xd08858,
+      metalness: 0.90,
+      roughness: 0.22,
+      envMapIntensity: 1.6,
+      clearcoat: 0.4,
+      clearcoatRoughness: 0.12
+    })
+  },
+
+  // BOM #6/#10 POM白色绝缘垫片 — 工程塑料: 微透光, 有蜡质光泽
+  flowPlate() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xf2f2f0,
+      metalness: 0.0,
+      roughness: 0.45,
+      envMapIntensity: 0.6,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.5,
+      sheen: 0.3,
+      sheenColor: new THREE.Color(0xffffff),
+      sheenRoughness: 0.6,
+      transmission: 0.05,
+      thickness: 2.0,
+      ior: 1.48
+    })
+  },
+
+  // O形圈 — 丁腈橡胶: 哑光黑, 微弹性光泽
+  gasket() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x141416,
+      metalness: 0.0,
+      roughness: 0.55,
+      envMapIntensity: 0.5,
+      clearcoat: 0.2,
+      clearcoatRoughness: 0.6,
+      sheen: 0.4,
+      sheenColor: new THREE.Color(0x333333),
+      sheenRoughness: 0.8
+    })
+  },
+
+  // BOM #7/#9 阳极/阴极板 — 实物: 暖灰银色拉丝不锈钢/钛
+  conductive() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xc0b8b0,
+      metalness: 0.85,
+      roughness: 0.35,
+      envMapIntensity: 1.2,
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.3
+    })
+  },
+
+  // 极板耳片
+  busLug() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xb4bcc4,
+      metalness: 0.90,
+      roughness: 0.33,
+      envMapIntensity: 1.2,
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.3
+    })
+  },
+
+  // BOM #8 MEA碳纸电极 — 碳纤维纸: 极粗糙哑光, 有细微纤维散射
+  gdl() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x222222,
+      metalness: 0.02,
+      roughness: 0.92,
+      envMapIntensity: 0.3,
+      sheen: 0.5,
+      sheenColor: new THREE.Color(0x444444),
+      sheenRoughness: 0.9,
+      emissive: 0x080808,
+      emissiveIntensity: 0.03
+    })
+  },
+
+  catalyst() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x252525,
+      metalness: 0.10,
+      roughness: 0.85,
+      envMapIntensity: 0.4,
+      sheen: 0.3,
+      sheenColor: new THREE.Color(0x555555),
+      sheenRoughness: 0.85
+    })
+  },
+
+  subgasket() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xeaeaea,
+      metalness: 0.0,
+      roughness: 0.55,
+      transparent: true,
+      opacity: 0.92,
+      envMapIntensity: 0.5,
+      side: THREE.DoubleSide
+    })
+  },
+
+  // 气液接头 — 镀铬不锈钢: 高反射镜面
+  gasPort() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xd0d8e0,
+      metalness: 0.96,
+      roughness: 0.12,
+      envMapIntensity: 2.0,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.1
+    })
+  },
+
+  manifold() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xc0c8d0,
+      metalness: 0.93,
+      roughness: 0.22,
+      envMapIntensity: 1.6,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.2
+    })
+  },
+
+  port() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xa8b0b8,
+      metalness: 0.88,
+      roughness: 0.35,
+      envMapIntensity: 1.0
+    })
+  },
+
+  oRing() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x111113,
+      metalness: 0.0,
+      roughness: 0.50,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.55,
+      sheen: 0.5,
+      sheenColor: new THREE.Color(0x2a2a2a),
+      sheenRoughness: 0.75
+    })
+  },
+
+  membrane() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x4fb6ff,
+      metalness: 0.05,
+      roughness: 0.12,
+      transmission: 0.55,
+      thickness: 0.4,
+      transparent: true,
+      opacity: 0.70,
+      emissive: 0x1e6cff,
+      emissiveIntensity: 0.28,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.2,
+      side: THREE.DoubleSide
+    })
+  },
+
+  channel() {
+    return new THREE.MeshStandardMaterial({
+      color: 0x29b6ff,
+      emissive: 0x0a4fa0,
+      emissiveIntensity: 0.65,
+      metalness: 0.4,
+      roughness: 0.4,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide
+    })
+  },
+
+  channelGroove() {
+    return new THREE.MeshStandardMaterial({
+      color: 0x3a4048,
+      metalness: 0.7,
+      roughness: 0.55,
+      emissive: 0x05151c,
+      emissiveIntensity: 0.12
+    })
+  },
+
+  edgeGlow() {
+    return new THREE.LineBasicMaterial({
+      color: 0x66d6ff,
+      transparent: true,
+      opacity: 0.9
+    })
+  },
+
+  particle() {
+    const canvas = document.createElement('canvas')
+    canvas.width = 64
+    canvas.height = 64
+    const ctx = canvas.getContext('2d')
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
+    g.addColorStop(0.00, 'rgba(220,240,255,1)')
+    g.addColorStop(0.35, 'rgba(80,180,255,0.9)')
+    g.addColorStop(0.70, 'rgba(30,100,200,0.4)')
+    g.addColorStop(1.00, 'rgba(10,40,90,0)')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, 64, 64)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.needsUpdate = true
+    return new THREE.PointsMaterial({
+      size: 2.4,
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      color: 0xcfefff
+    })
+  }
+}

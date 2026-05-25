@@ -1,0 +1,78 @@
+{
+  "name": "electrolyzer-3d-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "description": "工业三层电解槽三维监测系统 (Vue3 + Three.js + Electron, 兼容 Win7 SP1+)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "electron:dev": "cross-env VITE_DEV_SERVER_URL=http://localhost:5173 concurrently -k -n \"VITE,ELECTRON\" -c \"yellow,cyan\" \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:start": "electron .",
+    "electron:build": "vite build && electron-builder --win --x64",
+    "electron:build:ia32": "vite build && electron-builder --win --ia32",
+    "electron:build:both": "vite build && electron-builder --win --x64 --ia32"
+  },
+  "dependencies": {
+    "echarts": "^5.5.0",
+    "gsap": "^3.12.5",
+    "three": "^0.160.1",
+    "vue": "^3.4.21",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "22.3.27",
+    "electron-builder": "^24.13.3",
+    "vite": "^5.2.6",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.industrial.electrolyzer3d",
+    "productName": "电解槽监测系统",
+    "copyright": "Copyright © 2026",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}-Setup.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "电解槽监测系统",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "language": "2052"
+    }
+  }
+}
