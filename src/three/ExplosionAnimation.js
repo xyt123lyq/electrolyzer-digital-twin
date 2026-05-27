@@ -1,29 +1,10 @@
 import { gsap } from 'gsap'
 
-/**
- * 爆炸 / 复位动画 (GSAP) — 10 件 BOM 装配 (8 螺柱版).
- *
- * 坐标约定 (cellGroup.rotation.x = -Math.PI/2):
- *  +Z = 场景上方 = topCover + 螺母/垫圈端
- *  -Z = 场景下方 = bottomCover 端
- *
- * 装配中心: middleGasket (POM+MEA 复合件) Z=0
- *
- * 爆炸规则 — 各层远离 middleGasket 中心展开:
- *  bolts/nuts/flatWashers: +Z 大幅展开 (顶部五金件向上)
- *  topCover:               orig + D*2  (+Z, 场景顶)
- *  upperGasket:            orig + D    (+Z)
- *  anodePlate:             orig + D*0.6 (+Z)
- *  middleGasket/mea:       shock 效果 (缩放脉冲 + emissive 闪烁, 不移位)
- *  cathodePlate:           orig - D*0.6 (-Z)
- *  lowerGasket:            orig - D     (-Z)
- *  bottomCover:            orig - D*2   (-Z)
- */
 export const ExplosionConfig = {
-  distance: 45,
-  duration: 1.2,
+  distance: 35,
+  duration: 1.4,          // 增加总时长
   ease: 'power3.out',
-  collapseDuration: 1.0,
+  collapseDuration: 1.4,  // 与爆炸时长一致
   collapseEase: 'power3.inOut',
   tilt: 0
 }
@@ -35,10 +16,10 @@ export function explodeCell(cell, onComplete) {
   }
 
   const layers = cell.userData.layers
-  const orig   = cell.userData.originalPositions
+  const orig = cell.userData.originalPositions
   cell.userData.state = 'exploding'
 
-  const D  = ExplosionConfig.distance
+  const D = ExplosionConfig.distance
   const DT = ExplosionConfig.duration
 
   const tl = gsap.timeline({
@@ -52,79 +33,96 @@ export function explodeCell(cell, onComplete) {
   })
   cell.userData._animTl = tl
 
-  // ── 螺柱 — 紧贴底板一起向 -Z (螺栓压入底板) ──────────────────────────
-  if (layers.bolts) {
-    tl.to(layers.bolts.position,
-      { z: orig.bolts - D * 1.5, duration: DT, ease: 'power4.out' }, 0.12)
+  // ========== 核心层先炸开（从内向外爆炸，对称分离）==========
+  // Z=0 为中心，+Z 侧向 +Z 炸开，-Z 侧向 -Z 炸开
+  // 拉伸网层 - mesh1 在顶层(+Z侧)向+Z，mesh2 在底层(-Z侧)向-Z（对称分开）
+  if (layers.mesh1) {
+    tl.to(layers.mesh1.position, { z: orig.mesh1 + D * 0.35, duration: DT * 0.5, ease: 'power3.out' }, 0.04)
   }
-  // ── 螺母/平垫圈 — 向 +Z (在顶板上方) ────────────────────────────────────
-  if (layers.nuts) {
-    tl.to(layers.nuts.position,
-      { z: orig.nuts + D * 2, duration: DT, ease: 'power4.out' }, 0.04)
-  }
-  if (layers.flatWashers) {
-    tl.to(layers.flatWashers.position,
-      { z: orig.flatWashers + D * 1.8, duration: DT * 0.95, ease: 'power3.out' }, 0.08)
+  if (layers.mesh2) {
+    tl.to(layers.mesh2.position, { z: orig.mesh2 - D * 0.35, duration: DT * 0.5, ease: 'power3.out' }, 0.05)
+    // mesh2 向 -Z 移动（对称分开，不是向+Z）
   }
 
-  // ── 上铜端盖 (+Z, 场景顶) ─────────────────────────────────────────────────
-  if (layers.topCover) {
-    tl.to(layers.topCover.position,
-      { z: orig.topCover + D * 1.5, duration: DT, ease: 'power4.out' }, 0.12)
+  // MEA层 - mea1/mea2 在顶层(+Z侧)向+Z，mea3/mea4 在底层(-Z侧)向-Z（对称分开）
+  if (layers.mea1) {
+    tl.to(layers.mea1.position, { z: orig.mea1 + D * 0.30, duration: DT * 0.55, ease: 'power3.out' }, 0.08)
+  }
+  if (layers.mea2) {
+    tl.to(layers.mea2.position, { z: orig.mea2 + D * 0.28, duration: DT * 0.55, ease: 'power3.out' }, 0.10)
+  }
+  if (layers.mea3) {
+    tl.to(layers.mea3.position, { z: orig.mea3 - D * 0.28, duration: DT * 0.55, ease: 'power3.out' }, 0.10)
+    // mea3 向 -Z（对称分开，不是向+Z）
+  }
+  if (layers.mea4) {
+    tl.to(layers.mea4.position, { z: orig.mea4 - D * 0.30, duration: DT * 0.55, ease: 'power3.out' }, 0.08)
+    // mea4 向 -Z（对称分开，不是向+Z）
   }
 
-  // ── 上 POM 垫 (+Z) ────────────────────────────────────────────────────────
-  if (layers.upperGasket) {
-    tl.to(layers.upperGasket.position,
-      { z: orig.upperGasket + D, duration: DT * 0.95, ease: 'power3.out' }, 0.16)
+  // 薄垫片层 - thinWhite1/2 在顶层向+Z，thinWhite3/4 在底层向-Z（对称分开）
+  if (layers.thinWhite1) {
+    tl.to(layers.thinWhite1.position, { z: orig.thinWhite1 + D * 0.22, duration: DT * 0.6, ease: 'power3.out' }, 0.14)
+  }
+  if (layers.thinWhite2) {
+    tl.to(layers.thinWhite2.position, { z: orig.thinWhite2 + D * 0.20, duration: DT * 0.6, ease: 'power3.out' }, 0.14)
+  }
+  if (layers.thinWhite3) {
+    tl.to(layers.thinWhite3.position, { z: orig.thinWhite3 - D * 0.20, duration: DT * 0.6, ease: 'power3.out' }, 0.14)
+  }
+  if (layers.thinWhite4) {
+    tl.to(layers.thinWhite4.position, { z: orig.thinWhite4 - D * 0.22, duration: DT * 0.65, ease: 'power3.out' }, 0.18)
   }
 
-  // ── 阳极板 (+Z 轻展开) ────────────────────────────────────────────────────
+  // 黑色垫圈 - blackGasket1在顶层，blackGasket2在底层
+  if (layers.blackGasket1) {
+    tl.to(layers.blackGasket1.position, { z: orig.blackGasket1 + D * 0.18, duration: DT * 0.7, ease: 'power3.out' }, 0.22)
+  }
+  if (layers.blackGasket2) {
+    tl.to(layers.blackGasket2.position, { z: orig.blackGasket2 - D * 0.18, duration: DT * 0.7, ease: 'power3.out' }, 0.22)
+  }
+
+  // ========== 中间层 ==========
+
+  // 极板层 - anodePlate在顶层，cathodePlate在底层
   if (layers.anodePlate) {
-    tl.to(layers.anodePlate.position,
-      { z: orig.anodePlate + D * 0.6, duration: DT * 0.9, ease: 'power3.out' }, 0.20)
+    tl.to(layers.anodePlate.position, { z: orig.anodePlate + D * 0.45, duration: DT * 0.75, ease: 'power3.out' }, 0.28)
   }
-
-  // ── middleGasket (POM+MEA) — shock: 缩放脉冲 + emissive 闪烁 (留在中心) ──
-  // layers.middleGasket 和 layers.mea 指向同一对象 (别名)
-  const meaLayer = layers.middleGasket ?? layers.mea
-  if (meaLayer) {
-    // 缩放脉冲
-    tl.to(meaLayer.scale,
-      { x: 1.08, y: 1.08, z: 1.0, duration: 0.15, ease: 'power3.out' }, 0.34)
-    tl.to(meaLayer.scale,
-      { x: 1.00, y: 1.00, z: 1.0, duration: 0.55, ease: 'elastic.out(1, 0.55)' }, 0.49)
-
-    // emissive 闪烁 (group.material = gdlMat)
-    const mat = meaLayer.material
-    if (mat) {
-      tl.to(mat, { emissiveIntensity: 1.8, duration: 0.18, ease: 'power3.out' }, 0.34)
-      tl.to(mat, { emissiveIntensity: 0.03, duration: 0.7, ease: 'power2.inOut' }, 0.52)
-    }
-
-    // 边缘辉光 (group.userData.edge = edgeMat)
-    const edgeMat = meaLayer.userData?.edge
-    if (edgeMat) {
-      tl.to(edgeMat, { opacity: 1.0, duration: 0.4, ease: 'power2.out' }, 0.34)
-    }
-  }
-
-  // ── 阴极板 (-Z 轻展开) ────────────────────────────────────────────────────
   if (layers.cathodePlate) {
-    tl.to(layers.cathodePlate.position,
-      { z: orig.cathodePlate - D * 0.6, duration: DT * 0.9, ease: 'power3.out' }, 0.20)
+    tl.to(layers.cathodePlate.position, { z: orig.cathodePlate - D * 0.45, duration: DT * 0.75, ease: 'power3.out' }, 0.28)
   }
 
-  // ── 下 POM 垫 (-Z) ────────────────────────────────────────────────────────
+  // 厚垫片层
+  if (layers.upperGasket) {
+    tl.to(layers.upperGasket.position, { z: orig.upperGasket + D * 0.65, duration: DT * 0.85, ease: 'power3.out' }, 0.34)
+  }
   if (layers.lowerGasket) {
-    tl.to(layers.lowerGasket.position,
-      { z: orig.lowerGasket - D, duration: DT * 0.95, ease: 'power3.out' }, 0.16)
+    tl.to(layers.lowerGasket.position, { z: orig.lowerGasket - D * 0.65, duration: DT * 0.85, ease: 'power3.out' }, 0.34)
   }
 
-  // ── 下铜端盖 (-Z, 场景底) ─────────────────────────────────────────────────
+  // ========== 外层五金件最后炸开 ==========
+
+  // 端盖层
+  if (layers.topCover) {
+    tl.to(layers.topCover.position, { z: orig.topCover + D * 0.9, duration: DT * 0.9, ease: 'power4.out' }, 0.40)
+  }
   if (layers.bottomCover) {
-    tl.to(layers.bottomCover.position,
-      { z: orig.bottomCover - D * 1.5, duration: DT, ease: 'power4.out' }, 0.12)
+    tl.to(layers.bottomCover.position, { z: orig.bottomCover - D * 0.9, duration: DT * 0.9, ease: 'power4.out' }, 0.40)
+  }
+
+  // 平垫圈
+  if (layers.flatWashers) {
+    tl.to(layers.flatWashers.position, { z: orig.flatWashers + D * 1.1, duration: DT * 0.95, ease: 'power3.out' }, 0.44)
+  }
+
+  // 螺母
+  if (layers.nuts) {
+    tl.to(layers.nuts.position, { z: orig.nuts + D * 1.3, duration: DT, ease: 'power4.out' }, 0.46)
+  }
+
+  // 螺栓
+  if (layers.bolts) {
+    tl.to(layers.bolts.position, { z: orig.bolts + D * 1.5, duration: DT, ease: 'power4.out' }, 0.48)
   }
 
   return tl
@@ -137,7 +135,7 @@ export function collapseCell(cell, onComplete) {
   }
 
   const layers = cell.userData.layers
-  const orig   = cell.userData.originalPositions
+  const orig = cell.userData.originalPositions
   cell.userData.state = 'collapsing'
 
   const d = ExplosionConfig.collapseDuration
@@ -154,51 +152,48 @@ export function collapseCell(cell, onComplete) {
   })
   cell.userData._animTl = tl
 
-  // 复位顺序: 由外向内 stagger
-  // 注意: middleGasket 和 mea 是同一对象, 只复位一次
+  // 从外向内复位 - 核心层最后归位（与爆炸镜像）
+  // 爆炸: 外层先启动，核心层最后启动
+  // 复位: 外层先归位，核心层最后归位
   const layerOrder = [
-    'bottomCover',  'lowerGasket',
-    'cathodePlate',
-    'middleGasket',
-    'anodePlate',
-    'upperGasket',  'topCover',
-    'flatWashers',  'nuts', 'bolts'
+    // 五金件（最外层，先归位）
+    { key: 'bolts', idx: 0 },
+    { key: 'nuts', idx: 1 },
+    { key: 'flatWashers', idx: 2 },
+    // 端盖
+    { key: 'topCover', idx: 3 },
+    { key: 'bottomCover', idx: 4 },
+    // 厚垫片
+    { key: 'upperGasket', idx: 5 },
+    { key: 'lowerGasket', idx: 6 },
+    // 极板
+    { key: 'anodePlate', idx: 7 },
+    { key: 'cathodePlate', idx: 8 },
+    // 黑色垫圈
+    { key: 'blackGasket1', idx: 9 },
+    { key: 'blackGasket2', idx: 10 },
+    // 薄垫片
+    { key: 'thinWhite1', idx: 11 },
+    { key: 'thinWhite2', idx: 12 },
+    { key: 'thinWhite3', idx: 13 },
+    { key: 'thinWhite4', idx: 14 },
+    // MEA层
+    { key: 'mea1', idx: 15 },
+    { key: 'mea2', idx: 16 },
+    { key: 'mea3', idx: 17 },
+    { key: 'mea4', idx: 18 },
+    // 拉伸网（核心，最后归位）
+    { key: 'mesh1', idx: 19 },
+    { key: 'mesh2', idx: 20 }
   ]
 
-  layerOrder.forEach((key, idx) => {
+  layerOrder.forEach(({ key, idx }) => {
     const layer = layers[key]
     if (!layer) return
-    // 优先使用 originalPositions[key], 回退到 middleGasket 的原始 Z=0
     const origZ = orig[key] ?? 0
-    tl.to(layer.position,
-      { z: origZ, duration: d * (0.85 + idx * 0.01), ease: e },
-      idx * 0.04)
+    // 紧凑的延迟节奏，外层快合拢，核心层最后精准归位
+    tl.to(layer.position, { z: origZ, duration: d * (0.5 + idx * 0.02), ease: 'power3.in' }, idx * 0.02)
   })
-
-  // 复位 middleGasket/mea 缩放
-  const meaLayer = layers.middleGasket ?? layers.mea
-  if (meaLayer) {
-    tl.to(meaLayer.scale,
-      { x: 1, y: 1, z: 1, duration: 0.4, ease: 'power2.inOut' }, 0)
-
-    // 复位发光和边缘辉光
-    const mat     = meaLayer.material
-    const edgeMat = meaLayer.userData?.edge
-    if (mat) {
-      tl.to(mat, { emissiveIntensity: 0.03, duration: d, ease: 'power2.in' }, 0)
-    }
-    if (edgeMat) {
-      tl.to(edgeMat, { opacity: 0.9, duration: d, ease: 'power2.in' }, 0)
-    }
-  }
-
-  // 复位极板缩放 (保险)
-  for (const key of ['anodePlate', 'cathodePlate']) {
-    if (layers[key]) {
-      tl.to(layers[key].scale,
-        { x: 1, y: 1, z: 1, duration: 0.4, ease: 'power2.inOut' }, 0)
-    }
-  }
 
   return tl
 }
