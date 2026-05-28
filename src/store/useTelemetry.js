@@ -31,7 +31,7 @@ export const telemetry = reactive({
   current: {
     load_voltage: 0, ch0_voltage: 0, ch1_voltage: 0,
     load_current: 0, temperature: 0, h2_flow: 0, h2_purity: 0,
-    cell1_voltage: 0, cell2_voltage: 0, cell3_voltage: 0,
+    cell1_voltage: 0, cell2_voltage: 0,
     current: 0, flow: 0, purity: 0,
     timestamp: Date.now()
   },
@@ -52,7 +52,6 @@ export const telemetry = reactive({
 export const thresholds = reactive({
   cell1_voltage: { LL: 1.65, L: 1.80, H: 2.00, HH: 2.10, unit: 'V',     label: 'Cell 1 电压' },
   cell2_voltage: { LL: 1.65, L: 1.80, H: 2.00, HH: 2.10, unit: 'V',     label: 'Cell 2 电压' },
-  cell3_voltage: { LL: 1.65, L: 1.80, H: 2.00, HH: 2.10, unit: 'V',     label: 'Cell 3 电压' },
   current:       { LL: 5,    L: 8,    H: 14,   HH: 16,   unit: 'A',     label: '负载电流'  },
   temperature:   { LL: 20,   L: 35,   H: 65,   HH: 80,   unit: '℃',    label: '电堆温度'  },
   flow:          { LL: 0.5,  L: 1.0,  H: 5.0,  HH: 6.0,  unit: 'L/min', label: '氢气流量'  },
@@ -73,7 +72,6 @@ export function applyRawSample(raw, meta = {}) {
   const ch0 = safeNum(raw.ch0_voltage)
   const ch1 = safeNum(raw.ch1_voltage)
   const load = raw.load_voltage != null ? safeNum(raw.load_voltage) : (ch0 + ch1)
-  const cell3 = Math.max(0, load - ch0 - ch1)
 
   const sample = {
     timestamp: ts,
@@ -86,7 +84,6 @@ export function applyRawSample(raw, meta = {}) {
     h2_purity:    safeNum(raw.h2_purity),
     cell1_voltage: ch0,
     cell2_voltage: ch1,
-    cell3_voltage: cell3,
     current: safeNum(raw.load_current),
     flow:    safeNum(raw.h2_flow),
     purity:  safeNum(raw.h2_purity)
@@ -119,7 +116,7 @@ export function applyRawSample(raw, meta = {}) {
 export function pushSample(sample) {
   applyRawSample({
     timestamp: sample.timestamp,
-    load_voltage: sample.load_voltage ?? ((+sample.cell1_voltage || 0) + (+sample.cell2_voltage || 0) + (+sample.cell3_voltage || 0)),
+    load_voltage: sample.load_voltage ?? ((+sample.cell1_voltage || 0) + (+sample.cell2_voltage || 0)),
     ch0_voltage:  sample.ch0_voltage  ?? sample.cell1_voltage,
     ch1_voltage:  sample.ch1_voltage  ?? sample.cell2_voltage,
     load_current: sample.load_current ?? sample.current,
@@ -232,18 +229,17 @@ export function startMock(intervalMs = 500) {
   stopMock()
   telemetry.status = 'mock'
   telemetry.source = 'mock'
-  mockState = { ch0: 1.91, ch1: 1.88, ch2: 1.94, cur: 12.0, temp: 52.0, flow: 2.4, pur: 99.2 }
+  mockState = { ch0: 1.91, ch1: 1.88, cur: 12.0, temp: 52.0, flow: 2.4, pur: 99.2 }
   mockTimer = setInterval(() => {
     mockState.ch0  = clamp(mockState.ch0  + jitter(0.02), 1.80, 2.00)
     mockState.ch1  = clamp(mockState.ch1  + jitter(0.02), 1.80, 2.00)
-    mockState.ch2  = clamp(mockState.ch2  + jitter(0.02), 1.80, 2.00)
     mockState.cur  = clamp(mockState.cur  + jitter(0.3),  10,   15)
     mockState.temp = clamp(mockState.temp + jitter(0.4),  40,   60)
     mockState.flow = clamp(mockState.flow + jitter(0.12), 1,    5)
     mockState.pur  = clamp(mockState.pur  + jitter(0.15), 98,   100)
     applyRawSample({
       timestamp:    Date.now(),
-      load_voltage: +(mockState.ch0 + mockState.ch1 + mockState.ch2).toFixed(3),
+      load_voltage: +(mockState.ch0 + mockState.ch1).toFixed(3),
       ch0_voltage:  +mockState.ch0.toFixed(3),
       ch1_voltage:  +mockState.ch1.toFixed(3),
       load_current: +mockState.cur.toFixed(2),

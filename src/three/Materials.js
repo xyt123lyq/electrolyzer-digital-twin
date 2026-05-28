@@ -5,9 +5,9 @@ export const MaterialPresets = {
   // BOM #1/#3/#4 螺栓杆 — 实物: 不锈钢光亮杆, 金属光泽
   bolt() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x888890,
+      color: 0x9a9da2,
       metalness: 0.90,
-      roughness: 0.35,
+      roughness: 0.28,
       envMapIntensity: 1.2,
       clearcoat: 0.15,
       clearcoatRoughness: 0.3
@@ -38,14 +38,14 @@ export const MaterialPresets = {
     })
   },
 
-  // BOM #5/#11 紫铜端盖 — 实物: 粉玫瑰金/浅粉铜色, 磨砂表面
+  // BOM #5/#11 紫铜端盖 — 实物: 暖玫瑰金, 磨砂/缎面质感
   endplate() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xe8b4a0,
-      metalness: 0.82,
-      roughness: 0.32,
-      envMapIntensity: 1.3,
-      clearcoat: 0.2,
+      color: 0xD89068,
+      metalness: 0.78,
+      roughness: 0.45,
+      envMapIntensity: 1.0,
+      clearcoat: 0.08,
       clearcoatRoughness: 0.25,
       emissive: 0x100504,
       emissiveIntensity: 0.04,
@@ -66,14 +66,14 @@ export const MaterialPresets = {
     })
   },
 
-  // BOM #6/#10 POM白色绝缘垫片 — 工程塑料: 微透光, 有蜡质光泽
+  // BOM #6/#10 POM白色绝缘垫片 — 工程塑料: 暖白色, 蜡质光泽
   flowPlate() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xf2f2f0,
+      color: 0xF2ECDA,
       metalness: 0.0,
-      roughness: 0.45,
+      roughness: 0.38,
       envMapIntensity: 0.6,
-      clearcoat: 0.25,
+      clearcoat: 0.35,
       clearcoatRoughness: 0.5,
       sheen: 0.3,
       sheenColor: new THREE.Color(0xffffff),
@@ -84,10 +84,25 @@ export const MaterialPresets = {
     })
   },
 
+  // 薄垫片用 — 暖白色POM，无transmission
+  thinGasket() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xEFE6D2,
+      metalness: 0.0,
+      roughness: 0.38,
+      envMapIntensity: 0.7,
+      clearcoat: 0.10,
+      clearcoatRoughness: 0.60,
+      sheen: 0.15,
+      sheenColor: new THREE.Color(0xffffff),
+      sheenRoughness: 0.55
+    })
+  },
+
   // O形圈 — 丁腈橡胶: 哑光黑, 微弹性光泽
   gasket() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x141416,
+      color: 0x5C1A12,
       metalness: 0.0,
       roughness: 0.55,
       envMapIntensity: 0.5,
@@ -99,12 +114,12 @@ export const MaterialPresets = {
     })
   },
 
-  // BOM #7/#9 阳极/阴极板 — 实物: 暖灰银色拉丝不锈钢/钛
+  // BOM #7/#9 阳极/阴极板 — 实物: 暗钛灰色拉丝金属
   conductive() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xc0b8b0,
-      metalness: 0.85,
-      roughness: 0.35,
+      color: 0x909498,
+      metalness: 0.88,
+      roughness: 0.42,
       envMapIntensity: 1.2,
       clearcoat: 0.15,
       clearcoatRoughness: 0.3
@@ -196,7 +211,7 @@ export const MaterialPresets = {
 
   oRing() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x111113,
+      color: 0x4A1510,
       metalness: 0.0,
       roughness: 0.50,
       clearcoat: 0.25,

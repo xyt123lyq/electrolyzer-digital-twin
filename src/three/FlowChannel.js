@@ -13,8 +13,9 @@ const ROW_GAP = 2                // 通道间隔
 const MARGIN = 10                // 距离板边缘的留白
 
 export function buildSerpentinePath() {
-  const W = CELL_CONFIG.width
-  const H = CELL_CONFIG.height
+  const W = CELL_CONFIG.innerDiameter
+  const H = CELL_CONFIG.innerDiameter
+  const MARGIN = 8
   const usableW = W - MARGIN * 2
   const usableH = H - MARGIN * 2
   const rowH = CHANNEL_RADIUS * 2 + ROW_GAP

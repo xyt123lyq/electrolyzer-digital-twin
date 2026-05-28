@@ -33,12 +33,12 @@ let chart = null
 let stopWatch = null
 let resizeObs = null
 
-const COLORS = ['#29b6ff', '#ffdf6c', '#6effb5']
-const AREA_RGBA = ['rgba(41,182,255,0.18)', 'rgba(255,223,108,0.15)', 'rgba(110,255,181,0.15)']
+const COLORS = ['#29b6ff', '#ffdf6c']
+const AREA_RGBA = ['rgba(41,182,255,0.18)', 'rgba(255,223,108,0.15)']
 
 const title = computed(() => {
   const cellTag = props.activeCell >= 0 ? ` · Cell ${props.activeCell + 1}` : ''
-  if (props.type === 'voltage') return props.activeCell >= 0 ? `V-T 曲线${cellTag} 电压` : 'V-T 曲线 · 三单元实时电压'
+  if (props.type === 'voltage') return props.activeCell >= 0 ? `V-T 曲线${cellTag} 电压` : 'V-T 曲线 · 双单元实时电压'
   if (props.type === 'current') return props.activeCell >= 0 ? `I-T 曲线${cellTag} 极片电流` : 'I-T 曲线 · 总电流'
   return '曲线'
 })
@@ -96,8 +96,7 @@ function buildSeriesShell() {
     }
     return [
       { ...common, name: 'Cell1', itemStyle: { color: COLORS[0] }, areaStyle: { color: 'rgba(41,182,255,0.15)' }, data: [] },
-      { ...common, name: 'Cell2', itemStyle: { color: COLORS[1] }, areaStyle: { color: 'rgba(255,223,108,0.10)' }, data: [] },
-      { ...common, name: 'Cell3', itemStyle: { color: COLORS[2] }, areaStyle: { color: 'rgba(110,255,181,0.10)' }, data: [] }
+      { ...common, name: 'Cell2', itemStyle: { color: COLORS[1] }, areaStyle: { color: 'rgba(255,223,108,0.10)' }, data: [] }
     ]
   }
   // current: 串联回路下三单元电流相同, 切换 cell 时只改名字 + 配色, 突出"该 cell 通过的电流"
@@ -121,14 +120,13 @@ function refresh() {
 
   if (props.type === 'voltage') {
     if (props.activeCell >= 0) {
-      const key = ['cell1_voltage', 'cell2_voltage', 'cell3_voltage'][props.activeCell]
+      const key = ['cell1_voltage', 'cell2_voltage'][props.activeCell]
       const d = points.map(s => [s.timestamp, s[key]])
       chart.setOption({ xAxis: { min: minT, max: now }, series: [{ data: d }] })
     } else {
       const d1 = points.map(s => [s.timestamp, s.cell1_voltage])
       const d2 = points.map(s => [s.timestamp, s.cell2_voltage])
-      const d3 = points.map(s => [s.timestamp, s.cell3_voltage])
-      chart.setOption({ xAxis: { min: minT, max: now }, series: [{ data: d1 }, { data: d2 }, { data: d3 }] })
+      chart.setOption({ xAxis: { min: minT, max: now }, series: [{ data: d1 }, { data: d2 }] })
     }
   } else {
     const d = points.map(s => [s.timestamp, s.current])

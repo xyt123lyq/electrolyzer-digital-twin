@@ -68,7 +68,7 @@ const demoOn = ref(true)
 
 const headerStats = computed(() => {
   const c = telemetry.current
-  const totalV = (+c.cell1_voltage) + (+c.cell2_voltage) + (+c.cell3_voltage)
+  const totalV = (+c.cell1_voltage) + (+c.cell2_voltage)
   return [
     { label: '总电压', value: totalV.toFixed(2), unit: 'V' },
     { label: '总电流', value: (+c.current).toFixed(1), unit: 'A' },

@@ -77,7 +77,7 @@ export class ElectrolyzerScene {
     this.renderer.setClearColor(0x000000, 0)
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 1.15
+    this.renderer.toneMappingExposure = 1.05
 
     if (this._profile.shadows) {
       this.renderer.shadowMap.enabled = true
@@ -115,7 +115,7 @@ export class ElectrolyzerScene {
   }
 
   _initLights() {
-    this.scene.add(new THREE.HemisphereLight(0xc8d8f0, 0x443322, 0.6))
+    this.scene.add(new THREE.HemisphereLight(0xE8DCC8, 0x554433, 0.6))
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.15))
 
     const key = new THREE.DirectionalLight(0xfff5e6, 2.0)
@@ -135,7 +135,7 @@ export class ElectrolyzerScene {
     }
     this.scene.add(key)
 
-    const fill = new THREE.DirectionalLight(0xc0d8ff, 0.7)
+    const fill = new THREE.DirectionalLight(0xE8D8C0, 0.5)
     fill.position.set(-200, 150, -120)
     this.scene.add(fill)
 
@@ -143,7 +143,7 @@ export class ElectrolyzerScene {
     back.position.set(50, 60, -250)
     this.scene.add(back)
 
-    const rim = new THREE.DirectionalLight(0x88aaff, 0.5)
+    const rim = new THREE.DirectionalLight(0xAABBDD, 0.3)
     rim.position.set(-120, -40, 200)
     this.scene.add(rim)
   }
@@ -348,8 +348,9 @@ export class ElectrolyzerScene {
       this._cameraDefault = { position: this.camera.position.clone(), target: this.controls.target.clone() }
     }
     gsap.killTweensOf([this.controls.target, this.camera.position])
-    const dist = 200
-    gsap.to(this.camera.position, { x: dist * 0.6, y: dist * 0.4, z: dist * 0.7, duration: 1.1, ease: 'power3.inOut', onUpdate: () => { this._needsRender = true } })
+    const dist = 220
+    // 相机放在cell中心高度(y=0)，对称看到顶板和底板
+    gsap.to(this.camera.position, { x: dist * 0.55, y: 0, z: dist * 0.75, duration: 1.1, ease: 'power3.inOut', onUpdate: () => { this._needsRender = true } })
     gsap.to(this.controls.target, { x: 0, y: 0, z: 0, duration: 1.0, ease: 'power3.inOut', onUpdate: () => { this._needsRender = true } })
   }
 
@@ -421,7 +422,7 @@ export class ElectrolyzerScene {
           const layers  = this.cell.userData.layers
           const pulse   = 1.0 + Math.sin(performance.now() * 0.003) * 0.35
           // layers.middleGasket and layers.mea are the same object (alias)
-          const meaMat  = (layers.middleGasket ?? layers.mea)?.material
+          const meaMat  = (layers.mea3 ?? layers.mea4)?.material
           if (meaMat) meaMat.emissiveIntensity = pulse
         }
         this._needsRender = true

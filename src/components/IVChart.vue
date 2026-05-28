@@ -115,8 +115,7 @@ function pickV(sample) {
   const i = props.activeCell
   if (i === 0) return +sample.cell1_voltage
   if (i === 1) return +sample.cell2_voltage
-  if (i === 2) return +sample.cell3_voltage
-  return ((+sample.cell1_voltage) + (+sample.cell2_voltage) + (+sample.cell3_voltage)) / 3
+  return ((+sample.cell1_voltage) + (+sample.cell2_voltage)) / 2
 }
 
 function refresh() {

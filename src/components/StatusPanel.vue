@@ -3,7 +3,7 @@
     <div class="panel-title">实时参数 · 单元监测</div>
     <div class="panel-body">
       <CellModel
-        v-for="i in 3"
+        v-for="i in 2"
         :key="i"
         :index="i - 1"
         :voltage="cellVoltage(i - 1)"
@@ -48,12 +48,12 @@ defineProps({
 
 const cellVoltage = (i) => {
   const c = telemetry.current
-  return [c.cell1_voltage, c.cell2_voltage, c.cell3_voltage][i] ?? 0
+  return [c.cell1_voltage, c.cell2_voltage][i] ?? 0
 }
 
 const totalVoltage = computed(() => {
   const c = telemetry.current
-  return (+c.cell1_voltage) + (+c.cell2_voltage) + (+c.cell3_voltage)
+  return (+c.cell1_voltage) + (+c.cell2_voltage)
 })
 const power = computed(() => totalVoltage.value * telemetry.current.current)
 </script>
