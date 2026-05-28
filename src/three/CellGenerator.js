@@ -387,8 +387,64 @@ function _addBlackGasketOnPattern(parent, zPos) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 阳极板
+// 极板
 // ─────────────────────────────────────────────────────────────────────────────
+// 极板2D形状与镂空定义
+// ─────────────────────────────────────────────────────────────────────────────
+function _makeCentralCutoutPath() {
+  const path = new THREE.Path()
+  path.moveTo(15, 15)
+  path.lineTo(15, 3.2)
+  path.lineTo(26.5, 3.2)
+  path.lineTo(26.5, -3.2)
+  path.lineTo(15, -3.2)
+  path.lineTo(15, -15)
+  path.lineTo(-15, -15)
+  path.lineTo(-15, -3.2)
+  path.lineTo(-26.5, -3.2)
+  path.lineTo(-26.5, 3.2)
+  path.lineTo(-15, 3.2)
+  path.lineTo(-15, 15)
+  path.closePath()
+  return path
+}
+
+function _makeBackingPlateShape(R) {
+  const shape = new THREE.Shape()
+  shape.absarc(0, 0, R, 0, Math.PI * 2, false)
+  
+  // Cutout 4 port holes
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const px = Math.cos(a) * 24.0
+    const py = Math.sin(a) * 24.0
+    const portHole = new THREE.Path()
+    portHole.absarc(px, py, 2.0, 0, Math.PI * 2, true)
+    shape.holes.push(portHole)
+  }
+  return shape
+}
+
+function _makeFacePlateShape(R) {
+  const shape = new THREE.Shape()
+  shape.absarc(0, 0, R, 0, Math.PI * 2, false)
+  
+  // Cutout 1: Central active area + horizontal branch channels
+  const mainCutout = _makeCentralCutoutPath()
+  shape.holes.push(mainCutout)
+  
+  // Cutout 2: Top port pocket
+  const topPort = new THREE.Path()
+  topPort.absarc(0, 24.0, 2.5, 0, Math.PI * 2, true)
+  shape.holes.push(topPort)
+  
+  // Cutout 3: Bottom port pocket
+  const bottomPort = new THREE.Path()
+  bottomPort.absarc(0, -24.0, 2.5, 0, Math.PI * 2, true)
+  shape.holes.push(bottomPort)
+  
+  return shape
+}
+
 function _makeAnodePlate(name, zPos) {
   const c = CELL_CONFIG
   const R = c.innerDiameter / 2
@@ -400,37 +456,23 @@ function _makeAnodePlate(name, zPos) {
 
   const mat = MaterialPresets.conductive()
 
-  // Circular plate with central square recess cutout
-  const plateShape = new THREE.Shape()
-  plateShape.absarc(0, 0, R, 0, Math.PI * 2, false)
-  const squareHole = new THREE.Path()
-  const halfS = c.flowChannel.recessSize / 2
-  squareHole.moveTo(-halfS, -halfS)
-  squareHole.lineTo(halfS, -halfS)
-  squareHole.lineTo(halfS, halfS)
-  squareHole.lineTo(-halfS, halfS)
-  squareHole.closePath()
-  plateShape.holes.push(squareHole)
+  // Base backing plate (thickness 2.65 mm)
+  const backingShape = _makeBackingPlateShape(R)
+  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
+  backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
+  const backingMesh = new THREE.Mesh(backingGeo, mat)
+  backingMesh.castShadow = true
+  backingMesh.position.z = 0.175 // side = -1 for anode, so position.z = +0.175
+  group.add(backingMesh)
 
-  const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: T, bevelEnabled: false })
-  plateGeo.translate(0, 0, -T / 2)
-  const disc = new THREE.Mesh(plateGeo, mat)
-  disc.castShadow = true
-  group.add(disc)
-
-  // Recess floor mesh placed at depth 0.35 mm (leaves a 0.35 mm deep pocket, thickness 2.65)
-  const recessShape = new THREE.Shape()
-  recessShape.moveTo(-halfS, -halfS)
-  recessShape.lineTo(halfS, -halfS)
-  recessShape.lineTo(halfS, halfS)
-  recessShape.lineTo(-halfS, halfS)
-  recessShape.closePath()
-  
-  const floorGeo = new THREE.ExtrudeGeometry(recessShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
-  floorGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
-  const floorMesh = new THREE.Mesh(floorGeo, mat)
-  floorMesh.position.z = 0.175 // side = -1 for anode, so position.z = +0.175
-  group.add(floorMesh)
+  // Face plate (thickness 0.35 mm) with cutouts
+  const faceShape = _makeFacePlateShape(R)
+  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false })
+  faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
+  const faceMesh = new THREE.Mesh(faceGeo, mat)
+  faceMesh.castShadow = true
+  faceMesh.position.z = -1.325 // side = -1 for anode, so position.z = -1.325
+  group.add(faceMesh)
 
   // 背面方形凹槽+流道
   _addPlateBlackGasket(group, -T / 2)
@@ -457,37 +499,23 @@ function _makeCathodePlate(name, zPos) {
 
   const mat = MaterialPresets.conductive()
 
-  // Circular plate with central square recess cutout
-  const plateShape = new THREE.Shape()
-  plateShape.absarc(0, 0, R, 0, Math.PI * 2, false)
-  const squareHole = new THREE.Path()
-  const halfS = c.flowChannel.recessSize / 2
-  squareHole.moveTo(-halfS, -halfS)
-  squareHole.lineTo(halfS, -halfS)
-  squareHole.lineTo(halfS, halfS)
-  squareHole.lineTo(-halfS, halfS)
-  squareHole.closePath()
-  plateShape.holes.push(squareHole)
+  // Base backing plate (thickness 2.65 mm)
+  const backingShape = _makeBackingPlateShape(R)
+  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
+  backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
+  const backingMesh = new THREE.Mesh(backingGeo, mat)
+  backingMesh.castShadow = true
+  backingMesh.position.z = -0.175 // side = 1 for cathode, so position.z = -0.175
+  group.add(backingMesh)
 
-  const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: T, bevelEnabled: false })
-  plateGeo.translate(0, 0, -T / 2)
-  const disc = new THREE.Mesh(plateGeo, mat)
-  disc.castShadow = true
-  group.add(disc)
-
-  // Recess floor mesh placed at depth 0.35 mm (leaves a 0.35 mm deep pocket, thickness 2.65)
-  const recessShape = new THREE.Shape()
-  recessShape.moveTo(-halfS, -halfS)
-  recessShape.lineTo(halfS, -halfS)
-  recessShape.lineTo(halfS, halfS)
-  recessShape.lineTo(-halfS, halfS)
-  recessShape.closePath()
-  
-  const floorGeo = new THREE.ExtrudeGeometry(recessShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
-  floorGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
-  const floorMesh = new THREE.Mesh(floorGeo, mat)
-  floorMesh.position.z = -0.175 // side = 1 for cathode, so position.z = -0.175
-  group.add(floorMesh)
+  // Face plate (thickness 0.35 mm) with cutouts
+  const faceShape = _makeFacePlateShape(R)
+  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false })
+  faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
+  const faceMesh = new THREE.Mesh(faceGeo, mat)
+  faceMesh.castShadow = true
+  faceMesh.position.z = 1.325 // side = 1 for cathode, so position.z = +1.325
+  group.add(faceMesh)
 
   // 正面方形凹槽+流道
   _addPlateBlackGasket(group, +T / 2)
