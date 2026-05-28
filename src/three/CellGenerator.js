@@ -400,17 +400,37 @@ function _makeAnodePlate(name, zPos) {
 
   const mat = MaterialPresets.conductive()
 
-  // 圆形极板（实物照片确认为圆形）
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(R, R, T, c.plate.segments), mat)
-  disc.rotation.x = Math.PI / 2
+  // Circular plate with central square recess cutout
+  const plateShape = new THREE.Shape()
+  plateShape.absarc(0, 0, R, 0, Math.PI * 2, false)
+  const squareHole = new THREE.Path()
+  const halfS = c.flowChannel.recessSize / 2
+  squareHole.moveTo(-halfS, -halfS)
+  squareHole.lineTo(halfS, -halfS)
+  squareHole.lineTo(halfS, halfS)
+  squareHole.lineTo(-halfS, halfS)
+  squareHole.closePath()
+  plateShape.holes.push(squareHole)
+
+  const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: T, bevelEnabled: false })
+  plateGeo.translate(0, 0, -T / 2)
+  const disc = new THREE.Mesh(plateGeo, mat)
   disc.castShadow = true
   group.add(disc)
-  // _addBrushedDiscLines(group, R, T / 2 + 0.08, 0xc7ccd0)
 
-  // 背面(下)垫圈纹路
-  // _addGasketPattern(group, -T / 2, true)
-
-  // 背面黑色垫圈
+  // Recess floor mesh placed at depth 0.35 mm (leaves a 0.35 mm deep pocket, thickness 2.65)
+  const recessShape = new THREE.Shape()
+  recessShape.moveTo(-halfS, -halfS)
+  recessShape.lineTo(halfS, -halfS)
+  recessShape.lineTo(halfS, halfS)
+  recessShape.lineTo(-halfS, halfS)
+  recessShape.closePath()
+  
+  const floorGeo = new THREE.ExtrudeGeometry(recessShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
+  floorGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
+  const floorMesh = new THREE.Mesh(floorGeo, mat)
+  floorMesh.position.z = 0.175 // side = -1 for anode, so position.z = +0.175
+  group.add(floorMesh)
 
   // 背面方形凹槽+流道
   _addPlateBlackGasket(group, -T / 2)
@@ -437,25 +457,45 @@ function _makeCathodePlate(name, zPos) {
 
   const mat = MaterialPresets.conductive()
 
-  // 圆形极板（实物照片确认为圆形）
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(R, R, T, c.plate.segments), mat)
-  disc.rotation.x = Math.PI / 2
+  // Circular plate with central square recess cutout
+  const plateShape = new THREE.Shape()
+  plateShape.absarc(0, 0, R, 0, Math.PI * 2, false)
+  const squareHole = new THREE.Path()
+  const halfS = c.flowChannel.recessSize / 2
+  squareHole.moveTo(-halfS, -halfS)
+  squareHole.lineTo(halfS, -halfS)
+  squareHole.lineTo(halfS, halfS)
+  squareHole.lineTo(-halfS, halfS)
+  squareHole.closePath()
+  plateShape.holes.push(squareHole)
+
+  const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: T, bevelEnabled: false })
+  plateGeo.translate(0, 0, -T / 2)
+  const disc = new THREE.Mesh(plateGeo, mat)
   disc.castShadow = true
   group.add(disc)
-  // _addBrushedDiscLines(group, R, -T / 2 - 0.08, 0xc7ccd0)
 
-  // 正面(上)垫圈纹路
-  // _addGasketPattern(group, +T / 2, true)
-
-  // 正面黑色垫圈
+  // Recess floor mesh placed at depth 0.35 mm (leaves a 0.35 mm deep pocket, thickness 2.65)
+  const recessShape = new THREE.Shape()
+  recessShape.moveTo(-halfS, -halfS)
+  recessShape.lineTo(halfS, -halfS)
+  recessShape.lineTo(halfS, halfS)
+  recessShape.lineTo(-halfS, halfS)
+  recessShape.closePath()
+  
+  const floorGeo = new THREE.ExtrudeGeometry(recessShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
+  floorGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
+  const floorMesh = new THREE.Mesh(floorGeo, mat)
+  floorMesh.position.z = -0.175 // side = 1 for cathode, so position.z = -0.175
+  group.add(floorMesh)
 
   // 正面方形凹槽+流道
   _addPlateBlackGasket(group, +T / 2)
   _addFlowChannelGroove(group, +T / 2)
 
-  // 两片拉伸网 - 在阴极板正面（流道上方）
+  // 两片拉伸网 - 在阴极板正面（完美缩入流道凹槽上方，深度为 0.12 mm）
   const meshGroup = _makeDoubleMeshStack()
-  meshGroup.position.z = +T / 2 + 0.5
+  meshGroup.position.z = +T / 2 - 0.12 // Sunken below the plate flat surface!
   group.add(meshGroup)
 
   _addPlateBoltHoles(group, T)
@@ -742,13 +782,10 @@ function _addFlowChannelGroove(parent, surfZ) {
   const grooveDepth = c.flowChannel.grooveDepth
   const grooveSize = c.flowChannel.recessSize
   const channelW = c.flowChannel.grooveWidth * 0.55
-  const grooveFaceZ = surfZ + side * (grooveDepth + 0.025)
+  
+  // Recess floor top is strictly sunken by grooveDepth (0.35 mm) relative to surfZ
+  const grooveFaceZ = surfZ - side * grooveDepth
 
-  const recessMat = new THREE.MeshStandardMaterial({
-    color: 0xb7bec2,
-    metalness: 0.85,
-    roughness: 0.36
-  })
   const channelMat = new THREE.MeshStandardMaterial({
     color: 0x697075,
     metalness: 0.88,
@@ -760,12 +797,9 @@ function _addFlowChannelGroove(parent, surfZ) {
     roughness: 0.55
   })
 
-  const recess = new THREE.Mesh(new THREE.BoxGeometry(grooveSize, grooveSize, grooveDepth), recessMat)
-  recess.position.set(0, 0, surfZ + side * grooveDepth / 2)
-  parent.add(recess)
-
+  // Recess frame border rim inside the pocket
   const rimW = 0.75
-  const rimZ = grooveFaceZ + side * 0.01
+  const rimZ = grooveFaceZ + side * 0.06
   for (const b of [
     { w: grooveSize + 1.4, h: rimW, x: 0, y: grooveSize / 2 + rimW / 2 },
     { w: grooveSize + 1.4, h: rimW, x: 0, y: -grooveSize / 2 - rimW / 2 },
@@ -777,12 +811,13 @@ function _addFlowChannelGroove(parent, surfZ) {
     parent.add(rim)
   }
 
+  // 11 Central flow lanes: thickness 0.11 mm, sitting flush on the recess floor (depth 0.35 to 0.24)
   const laneCount = 11
   const laneSpacing = grooveSize / (laneCount + 1)
   for (let i = 0; i < laneCount; i++) {
     const y = -grooveSize / 2 + laneSpacing * (i + 1)
     const lane = new THREE.Mesh(new THREE.BoxGeometry(grooveSize - 5.2, channelW, 0.11), channelMat)
-    lane.position.set(0, y, grooveFaceZ + side * 0.035)
+    lane.position.set(0, y, grooveFaceZ + side * 0.055)
     parent.add(lane)
   }
 
@@ -792,7 +827,7 @@ function _addFlowChannelGroove(parent, surfZ) {
     const py = Math.sin(a) * portR
     const port = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.16, 18), portMat)
     port.rotation.x = Math.PI / 2
-    port.position.set(px, py, grooveFaceZ + side * 0.05)
+    port.position.set(px, py, grooveFaceZ + side * 0.08)
     parent.add(port)
 
     // Flow channel branches ONLY on left (Math.PI) and right (0) ports!
@@ -803,7 +838,7 @@ function _addFlowChannelGroove(parent, surfZ) {
         const branchX = 19.5 - step * 1.0  // Stepped center so all start at x = 14.75
 
         const branch = new THREE.Mesh(new THREE.BoxGeometry(branchLen, 0.28, 0.10), channelMat)
-        branch.position.set(branchX * Math.cos(a), i * 1.15, grooveFaceZ + side * 0.035)
+        branch.position.set(branchX * Math.cos(a), i * 1.15, grooveFaceZ + side * 0.05)
         parent.add(branch)
       }
     }
