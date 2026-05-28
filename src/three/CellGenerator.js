@@ -392,19 +392,45 @@ function _addBlackGasketOnPattern(parent, zPos) {
 // 极板2D形状与镂空定义
 // ─────────────────────────────────────────────────────────────────────────────
 function _makeCentralCutoutPath() {
+  const W_in = 15.0
+  const r_corner = 2.0
+  const R_port = 24.0
+  const r_port_inner = 5.6
+  const L_straight_in = 9.3
+  const offset_port_in = 4.05
+  const offset_straight_in = 1.665
+
   const path = new THREE.Path()
-  path.moveTo(15, 15)
-  path.lineTo(15, 3.2)
-  path.lineTo(26.5, 3.2)
-  path.lineTo(26.5, -3.2)
-  path.lineTo(15, -3.2)
-  path.lineTo(15, -15)
-  path.lineTo(-15, -15)
-  path.lineTo(-15, -3.2)
-  path.lineTo(-26.5, -3.2)
-  path.lineTo(-26.5, 3.2)
-  path.lineTo(-15, 3.2)
-  path.lineTo(-15, 15)
+  path.moveTo(W_in, -L_straight_in)
+
+  // Go to bottom-right corner
+  path.lineTo(W_in, -W_in + r_corner)
+  path.absarc(W_in - r_corner, -W_in + r_corner, r_corner, 0, -0.5 * Math.PI, true)
+
+  // Go straight across bottom (Closed bottom port)
+  path.lineTo(-W_in + r_corner, -W_in)
+  path.absarc(-W_in + r_corner, -W_in + r_corner, r_corner, -0.5 * Math.PI, -Math.PI, true)
+
+  // Go to left lobe (Open left port loop)
+  path.lineTo(-W_in, -L_straight_in)
+  path.bezierCurveTo(-W_in, -L_straight_in + offset_straight_in, -R_port + offset_port_in, -r_port_inner, -R_port, -r_port_inner)
+  path.absarc(-R_port, 0, r_port_inner, 1.5 * Math.PI, 0.5 * Math.PI, true)
+  path.bezierCurveTo(-R_port + offset_port_in, r_port_inner, -W_in, L_straight_in - offset_straight_in, -W_in, L_straight_in)
+
+  // Go to top-left corner
+  path.lineTo(-W_in, W_in - r_corner)
+  path.absarc(-W_in + r_corner, W_in - r_corner, r_corner, -Math.PI, -1.5 * Math.PI, true)
+
+  // Go straight across top (Closed top port)
+  path.lineTo(W_in - r_corner, W_in)
+  path.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
+
+  // Go to right lobe (Open right port loop)
+  path.lineTo(W_in, L_straight_in)
+  path.bezierCurveTo(W_in, L_straight_in - offset_straight_in, R_port - offset_port_in, r_port_inner, R_port, r_port_inner)
+  path.absarc(R_port, 0, r_port_inner, 0.5 * Math.PI, -0.5 * Math.PI, true)
+  path.bezierCurveTo(R_port - offset_port_in, -r_port_inner, W_in, -L_straight_in + offset_straight_in, W_in, -L_straight_in)
+
   path.closePath()
   return path
 }
