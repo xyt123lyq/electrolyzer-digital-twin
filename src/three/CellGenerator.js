@@ -693,30 +693,6 @@ function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
   const relief = new THREE.Mesh(reliefGeo, reliefMat)
   relief.position.z = z
   parent.add(relief)
-
-  // Add 5 horizontal parallel slots on left and right ports to simulate the Teflon slots!
-  const slotLength = 9.5
-  const slotWidth = 0.5
-  const slotHeight = reliefH * 1.2
-  const slotMat = new THREE.MeshStandardMaterial({
-    color: 0x9c9a90, // Elegant darker warm grey to simulate shadow/slot depth
-    metalness: 0.1,
-    roughness: 0.6
-  })
-  const slotGeo = new THREE.BoxGeometry(slotLength, slotWidth, slotHeight)
-
-  for (const a of [0, Math.PI]) {
-    const cos = Math.cos(a)
-    const xMid = 19.5
-
-    for (let i = -2; i <= 2; i++) {
-      const px = xMid * cos
-      const py = i * 1.15
-      const slotMesh = new THREE.Mesh(slotGeo, slotMat)
-      slotMesh.position.set(px, py, z + side * 0.01)
-      parent.add(slotMesh)
-    }
-  }
 }
 
 function _addGasketPattern(parent, surfZ, front) {
@@ -846,24 +822,6 @@ function _addPlateBlackGasket(parent, surfZ) {
   parent.add(mesh)
 
   // Add 5 horizontal parallel slots on left and right ports to expose the plate silver channels underneath!
-  const slotLength = 9.5
-  const slotWidth = 0.5
-  const slotHeight = 0.04
-  const slotMat = MaterialPresets.conductive()
-  const slotGeo = new THREE.BoxGeometry(slotLength, slotWidth, slotHeight)
-
-  for (const a of [0, Math.PI]) {
-    const cos = Math.cos(a)
-    const xMid = 19.5
-
-    for (let i = -2; i <= 2; i++) {
-      const px = xMid * cos
-      const py = i * 1.15
-      const slotMesh = new THREE.Mesh(slotGeo, slotMat)
-      slotMesh.position.set(px, py, mesh.position.z + side * (bgT / 2 + 0.01))
-      parent.add(slotMesh)
-    }
-  }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // 质子膜
