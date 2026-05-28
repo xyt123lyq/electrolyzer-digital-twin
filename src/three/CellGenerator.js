@@ -964,10 +964,20 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   const R_corner = 3.5
   const r_corner = 2.0
 
-  const L_straight = W_in - 6.0
-  const L_straight_in = L_straight
   const L_corner = W_out - R_corner
   const L_corner_in = W_in - r_corner
+
+  // To guarantee perfectly monotonic S-curves without any overshoot:
+  // L_straight must be strictly between r_port_outer and L_corner
+  const L_straight = (r_port_outer + L_corner) / 2
+  const L_straight_in = (r_port_inner + L_corner_in) / 2
+
+  const tension = 0.45
+  const offset_port = tension * (R_port - W_out)
+  const offset_straight = tension * (L_straight - r_port_outer)
+  
+  const offset_port_in = tension * (R_port - W_in)
+  const offset_straight_in = tension * (L_straight_in - r_port_inner)
 
   const shape = new THREE.Shape()
 
@@ -978,35 +988,35 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   shape.moveTo(R_port, r_port_outer)
 
   // Top-Right Quadrant
-  shape.bezierCurveTo(R_port, r_port_outer + 1.5, W_out, L_straight - 1.5, W_out, L_straight)
+  shape.bezierCurveTo(R_port - offset_port, r_port_outer, W_out, L_straight - offset_straight, W_out, L_straight)
   shape.lineTo(W_out, L_corner)
   shape.absarc(W_out - R_corner, W_out - R_corner, R_corner, 0, 0.5 * Math.PI, false)
   shape.lineTo(L_straight, W_out)
-  shape.bezierCurveTo(L_straight - 1.5, W_out, r_port_outer + 1.5, R_port, r_port_outer, R_port)
+  shape.bezierCurveTo(L_straight - offset_straight, W_out, r_port_outer, R_port - offset_port, r_port_outer, R_port)
   shape.absarc(0, R_port, r_port_outer, 0, Math.PI, false)
 
   // Top-Left Quadrant
-  shape.bezierCurveTo(-r_port_outer - 1.5, R_port, -L_straight + 1.5, W_out, -L_straight, W_out)
+  shape.bezierCurveTo(-r_port_outer, R_port - offset_port, -L_straight + offset_straight, W_out, -L_straight, W_out)
   shape.lineTo(-W_out + R_corner, W_out)
   shape.absarc(-W_out + R_corner, W_out - R_corner, R_corner, 0.5 * Math.PI, Math.PI, false)
   shape.lineTo(-W_out, L_straight)
-  shape.bezierCurveTo(-W_out, L_straight - 1.5, -R_port, r_port_outer + 1.5, -R_port, r_port_outer)
+  shape.bezierCurveTo(-W_out, L_straight - offset_straight, -R_port + offset_port, r_port_outer, -R_port, r_port_outer)
   shape.absarc(-R_port, 0, r_port_outer, 0.5 * Math.PI, 1.5 * Math.PI, false)
 
   // Bottom-Left Quadrant
-  shape.bezierCurveTo(-R_port, -r_port_outer - 1.5, -W_out, -L_straight + 1.5, -W_out, -L_straight)
+  shape.bezierCurveTo(-R_port + offset_port, -r_port_outer, -W_out, -L_straight + offset_straight, -W_out, -L_straight)
   shape.lineTo(-W_out, -L_corner)
   shape.absarc(-W_out + R_corner, -W_out + R_corner, R_corner, Math.PI, 1.5 * Math.PI, false)
   shape.lineTo(-L_straight, -W_out)
-  shape.bezierCurveTo(-L_straight + 1.5, -W_out, -r_port_outer - 1.5, -R_port, -r_port_outer, -R_port)
+  shape.bezierCurveTo(-L_straight + offset_straight, -W_out, -r_port_outer, -R_port + offset_port, -r_port_outer, -R_port)
   shape.absarc(0, -R_port, r_port_outer, Math.PI, 2 * Math.PI, false)
 
   // Bottom-Right Quadrant
-  shape.bezierCurveTo(r_port_outer + 1.5, -R_port, L_straight - 1.5, -W_out, L_straight, -W_out)
+  shape.bezierCurveTo(r_port_outer, -R_port + offset_port, L_straight - offset_straight, -W_out, L_straight, -W_out)
   shape.lineTo(W_out - R_corner, -W_out)
   shape.absarc(W_out - R_corner, -W_out + R_corner, R_corner, 1.5 * Math.PI, 2 * Math.PI, false)
   shape.lineTo(W_out, -L_straight)
-  shape.bezierCurveTo(W_out, -L_straight + 1.5, R_port, -r_port_outer - 1.5, R_port, -r_port_outer)
+  shape.bezierCurveTo(W_out, -L_straight + offset_straight, R_port - offset_port, -r_port_outer, R_port, -r_port_outer)
   shape.absarc(R_port, 0, r_port_outer, 1.5 * Math.PI, 2.5 * Math.PI, false)
   shape.closePath()
 
@@ -1018,35 +1028,35 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   innerPath.moveTo(r_port_inner, R_port)
 
   // Top-Right Quadrant
-  innerPath.bezierCurveTo(r_port_inner + 1.5, R_port, L_straight_in - 1.5, W_in, L_straight_in, W_in)
+  innerPath.bezierCurveTo(r_port_inner, R_port - offset_port_in, L_straight_in - offset_straight_in, W_in, L_straight_in, W_in)
   innerPath.lineTo(W_in - r_corner, W_in)
   innerPath.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
   innerPath.lineTo(W_in, L_straight_in)
-  innerPath.bezierCurveTo(W_in, L_straight_in - 1.5, R_port, r_port_inner + 1.5, R_port, r_port_inner)
+  innerPath.bezierCurveTo(W_in, L_straight_in - offset_straight_in, R_port - offset_port_in, r_port_inner, R_port, r_port_inner)
   innerPath.absarc(R_port, 0, r_port_inner, 0.5 * Math.PI, -0.5 * Math.PI, true)
 
   // Bottom-Right Quadrant
-  innerPath.bezierCurveTo(R_port, -r_port_inner - 1.5, W_in, -L_straight_in + 1.5, W_in, -L_straight_in)
+  innerPath.bezierCurveTo(R_port - offset_port_in, -r_port_inner, W_in, -L_straight_in + offset_straight_in, W_in, -L_straight_in)
   innerPath.lineTo(W_in, -W_in + r_corner)
   innerPath.absarc(W_in - r_corner, -W_in + r_corner, r_corner, 0, -0.5 * Math.PI, true)
   innerPath.lineTo(L_straight_in, -W_in)
-  innerPath.bezierCurveTo(L_straight_in - 1.5, -W_in, r_port_inner + 1.5, -R_port, r_port_inner, -R_port)
+  innerPath.bezierCurveTo(L_straight_in - offset_straight_in, -W_in, r_port_inner, -R_port + offset_port_in, r_port_inner, -R_port)
   innerPath.absarc(0, -R_port, r_port_inner, 0, -Math.PI, true)
 
   // Bottom-Left Quadrant
-  innerPath.bezierCurveTo(-r_port_inner - 1.5, -R_port, -L_straight_in + 1.5, -W_in, -L_straight_in, -W_in)
+  innerPath.bezierCurveTo(-r_port_inner, -R_port + offset_port_in, -L_straight_in + offset_straight_in, -W_in, -L_straight_in, -W_in)
   innerPath.lineTo(-W_in + r_corner, -W_in)
   innerPath.absarc(-W_in + r_corner, -W_in + r_corner, r_corner, -0.5 * Math.PI, -Math.PI, true)
   innerPath.lineTo(-W_in, -L_straight_in)
-  innerPath.bezierCurveTo(-W_in, -L_straight_in - 1.5, -R_port, -r_port_inner + 1.5, -R_port, -r_port_inner)
+  innerPath.bezierCurveTo(-W_in, -L_straight_in + offset_straight_in, -R_port + offset_port_in, -r_port_inner, -R_port, -r_port_inner)
   innerPath.absarc(-R_port, 0, r_port_inner, -0.5 * Math.PI, -1.5 * Math.PI, true)
 
   // Top-Left Quadrant
-  innerPath.bezierCurveTo(-R_port, r_port_inner + 1.5, -W_in, L_straight_in - 1.5, -W_in, L_straight_in)
+  innerPath.bezierCurveTo(-R_port + offset_port_in, r_port_inner, -W_in, L_straight_in - offset_straight_in, -W_in, L_straight_in)
   innerPath.lineTo(-W_in, W_in - r_corner)
   innerPath.absarc(-W_in + r_corner, W_in - r_corner, r_corner, -Math.PI, -1.5 * Math.PI, true)
   innerPath.lineTo(-L_straight_in, W_in)
-  innerPath.bezierCurveTo(-L_straight_in + 1.5, W_in, -r_port_inner - 1.5, R_port, -r_port_inner, R_port)
+  innerPath.bezierCurveTo(-L_straight_in + offset_straight_in, W_in, -r_port_inner, R_port - offset_port_in, -r_port_inner, R_port)
   innerPath.absarc(0, R_port, r_port_inner, Math.PI, 0, true)
 
   innerPath.closePath()
