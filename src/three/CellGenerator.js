@@ -798,8 +798,12 @@ function _addFlowChannelGroove(parent, surfZ) {
     // Flow channel branches ONLY on left (Math.PI) and right (0) ports!
     if (a === 0 || a === Math.PI) {
       for (let i = -2; i <= 2; i++) { // 5 horizontal slots!
-        const branch = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.28, 0.10), channelMat) // Width along x is 9.5, height along y is 0.28!
-        branch.position.set(19.5 * Math.cos(a), i * 1.15, grooveFaceZ + side * 0.035)
+        const step = Math.abs(i)
+        const branchLen = 9.5 - step * 2.0 // Stepped length: 9.5, 7.5, 5.5
+        const branchX = 19.5 - step * 1.0  // Stepped center so all start at x = 14.75
+
+        const branch = new THREE.Mesh(new THREE.BoxGeometry(branchLen, 0.28, 0.10), channelMat)
+        branch.position.set(branchX * Math.cos(a), i * 1.15, grooveFaceZ + side * 0.035)
         parent.add(branch)
       }
     }
@@ -940,10 +944,14 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   // To guarantee perfectly monotonic S-curves without any overshoot:
   // L_straight must be strictly between r_port_outer and L_corner
   const L_straight = (r_port_outer + L_corner) / 2
+  const L_straight_in = (r_port_inner + L_corner_in) / 2
 
   const tension = 0.45
   const offset_port = tension * (R_port - W_out)
   const offset_straight = tension * (L_straight - r_port_outer)
+
+  const offset_port_in = tension * (R_port - W_in)
+  const offset_straight_in = tension * (L_straight_in - r_port_inner)
 
   const shape = new THREE.Shape()
 
@@ -987,25 +995,50 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   shape.closePath()
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // INNER BOUNDARY: Rounded square central window hole (CW Winding Order)
+  // INNER BOUNDARY (CW Winding Order)
+  // Left/Right ports are OPEN (connected to the center window)
+  // Top/Bottom ports are CLOSED (solid walls)
   // ─────────────────────────────────────────────────────────────────────────────
   const innerPath = new THREE.Path()
-  innerPath.moveTo(-W_in + r_corner, W_in)
-  innerPath.lineTo(W_in - r_corner, W_in)
-  innerPath.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
+  // Start at right lobe bottom inner (CW winding)
+  innerPath.moveTo(W_in, -L_straight_in)
+
+  // Go to bottom-right corner
   innerPath.lineTo(W_in, -W_in + r_corner)
   innerPath.absarc(W_in - r_corner, -W_in + r_corner, r_corner, 0, -0.5 * Math.PI, true)
+
+  // Go straight across bottom (Closed bottom port)
   innerPath.lineTo(-W_in + r_corner, -W_in)
   innerPath.absarc(-W_in + r_corner, -W_in + r_corner, r_corner, -0.5 * Math.PI, -Math.PI, true)
+
+  // Go to left lobe (Open left port loop)
+  innerPath.lineTo(-W_in, -L_straight_in)
+  innerPath.bezierCurveTo(-W_in, -L_straight_in + offset_straight_in, -R_port + offset_port_in, -r_port_inner, -R_port, -r_port_inner)
+  innerPath.absarc(-R_port, 0, r_port_inner, 1.5 * Math.PI, 0.5 * Math.PI, true)
+  innerPath.bezierCurveTo(-R_port + offset_port_in, r_port_inner, -W_in, L_straight_in - offset_straight_in, -W_in, L_straight_in)
+
+  // Go to top-left corner
   innerPath.lineTo(-W_in, W_in - r_corner)
-  innerPath.absarc(-W_in + r_corner, W_in - r_corner, r_corner, Math.PI, 0.5 * Math.PI, true)
+  innerPath.absarc(-W_in + r_corner, W_in - r_corner, r_corner, -Math.PI, -1.5 * Math.PI, true)
+
+  // Go straight across top (Closed top port)
+  innerPath.lineTo(W_in - r_corner, W_in)
+  innerPath.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
+
+  // Go to right lobe (Open right port loop)
+  innerPath.lineTo(W_in, L_straight_in)
+  innerPath.bezierCurveTo(W_in, L_straight_in - offset_straight_in, R_port - offset_port_in, r_port_inner, R_port, r_port_inner)
+  innerPath.absarc(R_port, 0, r_port_inner, 0.5 * Math.PI, -0.5 * Math.PI, true)
+  innerPath.bezierCurveTo(R_port - offset_port_in, -r_port_inner, W_in, -L_straight_in + offset_straight_in, W_in, -L_straight_in)
+
   innerPath.closePath()
   shape.holes.push(innerPath)
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 4 SEPARATE CIRCULAR PORT HOLES (CW Winding Order)
+  // 2 SEPARATE CIRCULAR PORT HOLES (CW Winding Order)
+  // ONLY for Top and Bottom ports, since Left and Right are open to the center!
   // ─────────────────────────────────────────────────────────────────────────────
-  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+  for (const a of [Math.PI / 2, Math.PI * 1.5]) {
     const px = Math.cos(a) * R_port
     const py = Math.sin(a) * R_port
     const portHole = new THREE.Path()
