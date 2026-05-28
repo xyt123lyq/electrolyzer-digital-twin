@@ -16,62 +16,64 @@ import { MaterialPresets } from './Materials.js'
  * 8. 底板 (bottomCover) - 圆角方形
  */
 export const CELL_CONFIG = {
-  diameter:      80,
-  innerDiameter: 76,
+  diameter:      90,
+  innerDiameter: 82,
 
   cover: {
-    thickness: 15,
-    segments:  48
+    thickness: 14,
+    segments:  72,
+    earExtend: 12,
+    earHalfWidth: 10
   },
   gasket: {
-    thickness: 5,
-    segments: 40
+    thickness: 4.5,
+    segments: 64
   },
   plate: {
     thickness: 3,
-    segments: 40
+    segments: 64
   },
   thinWhite: {
     thickness: 1.0,
     segments: 40
   },
   blackGasket: {
-    thickness: 1.0,
+    thickness: 0.9,
     width: 50,
-    height: 40
+    height: 38
   },
   mea: {
     size: 25,
     thickness: 0.3
   },
   mesh: {
-    size: 30,
-    thickness: 0.3,
-    diamondSize: 3  // 菱形对角线尺寸(加密)
+    size: 26,
+    thickness: 0.25,
+    diamondSize: 3.1  // 菱形对角线尺寸(加密)
   },
   bolt: {
     count: 8,
-    pcd: 58,
-    diameter: 4,
-    length: 80,
+    pcd: 68,
+    diameter: 4.2,
+    length: 82,
     nutHeight: 4,
-    nutAF: 7
+    nutAF: 8
   },
   washer: {
-    od: 8,
-    id: 4.5,
-    thickness: 1.5
+    od: 9.5,
+    id: 4.8,
+    thickness: 1.2
   },
   lug: {
-    width: 10,
-    length: 12,
+    width: 13,
+    length: 18,
     thickness: 2,
-    holeRadius: 2.5
+    holeRadius: 3.1
   },
   flowChannel: {
-    grooveWidth: 1.0,
-    grooveDepth: 0.3,
-    recessSize: 26
+    grooveWidth: 1.05,
+    grooveDepth: 0.35,
+    recessSize: 30
   },
 
   get width()  { return this.diameter },
@@ -82,38 +84,28 @@ export const CELL_CONFIG = {
 // Z位置计算（从中心对称向外）
 // ─────────────────────────────────────────────────────────────────────────────
 function _layerZ(c) {
-  const gT  = c.gasket.thickness     // 5
-  const pT  = c.plate.thickness      // 3
   const cvT = c.cover.thickness      // 15
   const wT  = c.washer.thickness     // 1.5
   const nH  = c.bolt.nutHeight       // 4
-  const twT = c.thinWhite.thickness  // 1.0
-  const meaT = c.mea.thickness       // 0.3
 
-  // 极板：间距 gT，两板之间是膜/网
-  const anodePlate   = +(gT / 2 + pT / 2)   // +4.0, span +2.5 to +5.5
-  const cathodePlate = -(gT / 2 + pT / 2)   // -4.0, span -5.5 to -2.5
-
-  // 阳极侧内层（从阳极板顶面向外堆叠）
-  const anodeTop = anodePlate + pT / 2       // +5.5
-  const thinWhite1 = anodeTop + twT / 2      // +6.0, span +5.5 to +6.5
-  const thinWhite2 = thinWhite1 + twT / 2 + twT / 2  // +7.0, span +6.5 to +7.5
-  const tw2Top = thinWhite2 + twT / 2        // +7.5
-  const mea3  = tw2Top + 0.2 + meaT / 2     // +7.85, span +7.7 to +8.0
-  const mea4  = mea3 + meaT / 2 + meaT / 2  // +8.15, span +8.0 to +8.3
-  const mesh1 = mea4 + meaT / 2 + 0.15      // +8.45, span ~+8.3 to +8.6
-  const mesh1Top = mesh1 + 0.15             // +8.6
-
-  // 厚垫片：底面贴合最外层内层的顶面
-  const upperGasket = mesh1Top + gT / 2      // +11.1, span +8.6 to +13.6
-  const topCover    = upperGasket + gT / 2 + cvT / 2  // +21.1, span +13.6 to +28.6
-
-  // 阴极侧厚垫片：顶面贴合阴极板底面
-  const cathodeBottom = cathodePlate - pT / 2  // -5.5
-  const lowerGasket  = cathodeBottom - gT / 2  // -8.0, span -10.5 to -5.5
-  const bottomCover  = lowerGasket - gT / 2 - cvT / 2  // -18.0, span -25.5 to -10.5
-
-  // 螺栓
+  // Symmetric stack around Z = 0
+  const mea3 = 0
+  const mea4 = 0
+  const mesh1 = 0
+  
+  const thinWhite1 = 0.7
+  const thinWhite2 = -0.7
+  
+  const anodePlate = 2.9
+  const cathodePlate = -2.9
+  
+  const upperGasket = 6.65
+  const lowerGasket = -6.65
+  
+  const topCover = 16.2
+  const bottomCover = -16.2
+  
+  // Hardware
   const flatWashers = topCover + cvT / 2 + wT / 2
   const nuts = flatWashers + wT / 2 + nH / 2
   const bolts = 0
@@ -128,11 +120,7 @@ function _layerZ(c) {
 }
 
 export function cellCoreThickness() {
-  // 螺栓杆跨度：从底盖底面到顶盖顶面
-  // topCover upper face = 21.1 + 7.5 = 28.6
-  // bottomCover lower face = -18.0 - 7.5 = -25.5
-  // span = 54.1
-  return 54.1
+  return 46.4
 }
 
 export function buildCell(index = 0) {
@@ -192,6 +180,7 @@ export function buildCell(index = 0) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 圆角方形 (Squircle) 形状生成
 // ─────────────────────────────────────────────────────────────────────────────
+// 圆角方形 (Squircle) 形状生成 — 保留兼容
 function _makeSquircleShape(flatR, cornerR) {
   const shape = new THREE.Shape()
   const r = Math.min(cornerR, flatR)
@@ -208,13 +197,60 @@ function _makeSquircleShape(flatR, cornerR) {
   return shape
 }
 
+// 圆形形状生成
+function _makeCircleShape(radius) {
+  const shape = new THREE.Shape()
+  shape.moveTo(radius, 0)
+  shape.absarc(0, 0, radius, 0, Math.PI * 2, false)
+  shape.closePath()
+  return shape
+}
+
+// 带侧耳的圆形端盖形状生成 (左右各一个半圆耳)
+function _makeCoverShape(radius, earExtend, earHalfH) {
+  // Main disc arc + two rectangular ears on left/right
+  const shape = new THREE.Shape()
+  const ex = radius + earExtend     // ear outer X
+  const ey = earHalfH               // ear half height
+  // Bottom of right ear → arc around top → bottom of left ear → arc back
+  shape.moveTo(radius * 0.85, -ey)
+  shape.lineTo(ex - ey, -ey)
+  shape.absarc(ex - ey, 0, ey, -Math.PI / 2, Math.PI / 2, false)
+  shape.lineTo(radius * 0.85, ey)
+  shape.absarc(0, 0, radius, Math.atan2(ey, radius * 0.85), Math.PI - Math.atan2(ey, radius * 0.85), true)
+  shape.lineTo(-(ex - ey), ey)
+  shape.absarc(-(ex - ey), 0, ey, Math.PI / 2, -Math.PI / 2, false)
+  shape.lineTo(-radius * 0.85, -ey)
+  shape.absarc(0, 0, radius, Math.PI + Math.atan2(ey, radius * 0.85), Math.PI * 2 - Math.atan2(ey, radius * 0.85), true)
+  shape.closePath()
+  return shape
+}
+
+function _makeSingleEarCoverShape(radius, earExtend, earHalfH) {
+  const shape = new THREE.Shape()
+  const ex = radius + earExtend
+  const ey = earHalfH
+  const joinA = Math.asin(ey / radius)
+  const xJoin = Math.cos(joinA) * radius
+
+  shape.moveTo(xJoin, -ey)
+  shape.lineTo(ex - ey, -ey)
+  shape.quadraticCurveTo(ex, -ey, ex, 0)
+  shape.quadraticCurveTo(ex, ey, ex - ey, ey)
+  shape.lineTo(xJoin, ey)
+  shape.absarc(0, 0, radius, joinA, Math.PI * 2 - joinA, false)
+  shape.closePath()
+  return shape
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 粉色端盖板（圆角方形）
+// 粉色端盖板（带侧耳圆形）
 // ─────────────────────────────────────────────────────────────────────────────
 function _makePinkCover(name, isTop, zPos) {
   const c = CELL_CONFIG
-  const flatR = c.diameter / 2
-  const cornerR = 5
+  const radius = c.diameter / 2
+  const earExtend = c.cover.earExtend
+  const earWidthY = c.cover.earHalfWidth
   const T = c.cover.thickness
 
   const group = new THREE.Group()
@@ -223,7 +259,7 @@ function _makePinkCover(name, isTop, zPos) {
 
   const mat = MaterialPresets.endplate()
 
-  const shape = _makeSquircleShape(flatR, cornerR)
+  const shape = _makeSingleEarCoverShape(radius, earExtend, earWidthY)
   const geo = new THREE.ExtrudeGeometry(shape, {
     depth: T,
     bevelEnabled: false
@@ -235,9 +271,11 @@ function _makePinkCover(name, isTop, zPos) {
   group.add(body)
 
   _addBoltHoles(group, T, 8)
+  _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
 
   if (isTop) {
     _addGasPorts(group, T / 2)
+    _addHexSocketPlug(group, 0, -17, T / 2 + 1.8)
   }
 
   group.position.z = zPos
@@ -245,12 +283,11 @@ function _makePinkCover(name, isTop, zPos) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 白色5cm厚垫片（双面纹路）
+// 白色5cm厚垫片（圆形双面纹路）
 // ─────────────────────────────────────────────────────────────────────────────
 function _makeWhiteGasketWithPattern(name, zPos) {
   const c = CELL_CONFIG
   const flatR = c.diameter / 2
-  const cornerR = 5
   const T = c.gasket.thickness
 
   const group = new THREE.Group()
@@ -259,7 +296,7 @@ function _makeWhiteGasketWithPattern(name, zPos) {
 
   const mat = MaterialPresets.flowPlate()
 
-  const shape = _makeSquircleShape(flatR, cornerR)
+  const shape = _makeCircleShape(flatR)
   const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false })
   geo.translate(0, 0, -T / 2)
   const body = new THREE.Mesh(geo, mat)
@@ -270,19 +307,19 @@ function _makeWhiteGasketWithPattern(name, zPos) {
   _addGasketPattern(group, -T / 2, false)
 
   _addBoltHoles(group, T, 8)
-  _addCloverOring(group, T)
+  _addPhotoCloverSealAt(group, T / 2)
+  _addPhotoCloverSealAt(group, -T / 2)
 
   group.position.z = zPos
   return group
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 白色5cm厚垫片（背面有纹路+黑色垫圈）
+// 白色5cm厚垫片（圆形背面纹路+黑色垫圈）
 // ─────────────────────────────────────────────────────────────────────────────
 function _makeWhiteGasketWithPatternBottom(name, zPos) {
   const c = CELL_CONFIG
   const flatR = c.diameter / 2
-  const cornerR = 5
   const T = c.gasket.thickness
 
   const group = new THREE.Group()
@@ -291,18 +328,16 @@ function _makeWhiteGasketWithPatternBottom(name, zPos) {
 
   const mat = MaterialPresets.flowPlate()
 
-  const shape = _makeSquircleShape(flatR, cornerR)
+  const shape = _makeCircleShape(flatR)
   const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false })
   geo.translate(0, 0, -T / 2)
   const body = new THREE.Mesh(geo, mat)
   body.castShadow = true
   group.add(body)
 
-  _addGasketPattern(group, -T / 2, true)
-  _addBlackGasketOnPattern(group, -T / 2)
-
+  _addGasketPattern(group, T / 2, true)
   _addBoltHoles(group, T, 8)
-  _addCloverOring(group, T)
+  _addPhotoCloverSealAt(group, T / 2)
 
   group.position.z = zPos
   return group
@@ -370,14 +405,15 @@ function _makeAnodePlate(name, zPos) {
   disc.rotation.x = Math.PI / 2
   disc.castShadow = true
   group.add(disc)
+  _addBrushedDiscLines(group, R, T / 2 + 0.08, 0xc7ccd0)
 
   // 背面(下)垫圈纹路
   _addGasketPattern(group, -T / 2, true)
 
   // 背面黑色垫圈
-  _addPlateBlackGasket(group, -T / 2)
 
   // 背面方形凹槽+流道
+  _addPlateBlackGasket(group, -T / 2)
   _addFlowChannelGroove(group, -T / 2)
 
   _addPlateBoltHoles(group, T)
@@ -406,14 +442,15 @@ function _makeCathodePlate(name, zPos) {
   disc.rotation.x = Math.PI / 2
   disc.castShadow = true
   group.add(disc)
+  _addBrushedDiscLines(group, R, -T / 2 - 0.08, 0xc7ccd0)
 
   // 正面(上)垫圈纹路
   _addGasketPattern(group, +T / 2, true)
 
   // 正面黑色垫圈
-  _addPlateBlackGasket(group, +T / 2)
 
   // 正面方形凹槽+流道
+  _addPlateBlackGasket(group, +T / 2)
   _addFlowChannelGroove(group, +T / 2)
 
   // 两片拉伸网 - 在阴极板正面（流道上方）
@@ -435,7 +472,7 @@ function _makeDoubleMeshStack() {
 
   const meshMat = MaterialPresets.gdl()
   const lineMat = new THREE.MeshStandardMaterial({
-    color: 0x505050,
+    color: 0x747879,
     metalness: 0.85,
     roughness: 0.35,
     side: THREE.DoubleSide
@@ -465,8 +502,8 @@ function _makeDoubleMeshStack() {
           const p2 = points[(i + 1) % 4]
           const lineGeo = new THREE.BoxGeometry(
             Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)),
-            0.4,
-            c.mesh.thickness + 0.1
+            0.28,
+            c.mesh.thickness + 0.04
           )
           const line = new THREE.Mesh(lineGeo, lineMat)
 
@@ -493,7 +530,6 @@ function _makeDoubleMeshStack() {
 function _makeThinWhite(name, zPos) {
   const c = CELL_CONFIG
   const flatR = c.diameter / 2
-  const cornerR = 5
   const T = c.thinWhite.thickness
 
   const group = new THREE.Group()
@@ -502,8 +538,8 @@ function _makeThinWhite(name, zPos) {
 
   const mat = MaterialPresets.thinGasket()
 
-  // 带方窗的圆角方形垫片
-  const shape = _makeSquircleShape(flatR, cornerR)
+  // 带方窗的圆形垫片
+  const shape = _makeCircleShape(flatR)
 
   const windowSize = c.mea.size + 6
   const window = new THREE.Path()
@@ -523,11 +559,9 @@ function _makeThinWhite(name, zPos) {
   // 这样爆炸动画可以独立移动MEA
 
   // 双面交叉线纹路
-  _addCrosshatchTexture(group, T / 2, true)
-  _addCrosshatchTexture(group, -T / 2, false)
-
   // 方形O-ring围绕方窗
-  _addSquareOring(group, windowSize, T)
+  _addThinWhiteWindowPattern(group, windowSize, T / 2)
+  _addThinWhiteWindowPattern(group, windowSize, -T / 2)
 
   _addBoltHoles(group, T, 8)
 
@@ -538,10 +572,15 @@ function _makeThinWhite(name, zPos) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 薄垫片交叉线纹路（细微CNC加工痕迹）
 // ─────────────────────────────────────────────────────────────────────────────
+function _circleXExtent(radius, y) {
+  const ay = Math.abs(y)
+  if (ay >= radius) return 0
+  return Math.sqrt(radius * radius - y * y)
+}
+
 function _addCrosshatchTexture(parent, surfZ, front) {
   const c = CELL_CONFIG
   const flatR = c.diameter / 2 - 3
-  const cornerR = 5
   const spacing = 2.5
   const lineW = 0.25
   const lineH = 0.35
@@ -553,9 +592,9 @@ function _addCrosshatchTexture(parent, surfZ, front) {
     roughness: 0.5
   })
 
-  // 水平方向平行线，裁剪到圆角方形边界
+  // 水平方向平行线，裁剪到圆形边界
   for (let y = -flatR; y <= flatR; y += spacing) {
-    const xExt = _squircleXExtent(flatR, cornerR, y)
+    const xExt = _circleXExtent(flatR, y)
     if (xExt < 2) continue
     const lineGeo = new THREE.BoxGeometry(xExt * 2, lineW, lineH)
     const line = new THREE.Mesh(lineGeo, mat)
@@ -565,7 +604,7 @@ function _addCrosshatchTexture(parent, surfZ, front) {
 
   // 垂直方向平行线（真交叉纹路）
   for (let x = -flatR; x <= flatR; x += spacing) {
-    const yExt = _squircleXExtent(flatR, cornerR, x)
+    const yExt = _circleXExtent(flatR, x)
     if (yExt < 2) continue
     const lineGeo = new THREE.BoxGeometry(lineW, yExt * 2, lineH)
     const line = new THREE.Mesh(lineGeo, mat)
@@ -574,7 +613,7 @@ function _addCrosshatchTexture(parent, surfZ, front) {
   }
 }
 
-// 计算圆角方形在给定y值处的x范围
+// 计算圆角方形在给定y值处的x范围 (保留作兼容)
 function _squircleXExtent(flatR, cornerR, y) {
   const ay = Math.abs(y)
   const r = Math.min(cornerR, flatR)
@@ -621,10 +660,56 @@ function _addSquareOring(parent, windowSize, gasketT) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 厚垫片纹路（细微CNC加工痕迹，单方向平行线）
 // ─────────────────────────────────────────────────────────────────────────────
+function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
+  const side = surfZ >= 0 ? 1 : -1
+  const mat = new THREE.MeshPhysicalMaterial({
+    color: 0xf8f8f3,
+    metalness: 0,
+    roughness: 0.28,
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.35
+  })
+  const lineMat = new THREE.MeshStandardMaterial({
+    color: 0xd8d8d0,
+    metalness: 0.05,
+    roughness: 0.45
+  })
+  const z = surfZ + side * 0.28
+  const half = windowSize + 4
+  const edgeW = 1.2
+
+  const bars = [
+    { w: half * 2, h: edgeW, x: 0, y: half },
+    { w: half * 2, h: edgeW, x: 0, y: -half },
+    { w: edgeW, h: half * 2, x: half, y: 0 },
+    { w: edgeW, h: half * 2, x: -half, y: 0 }
+  ]
+  for (const b of bars) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, 0.5), mat)
+    mesh.position.set(b.x, b.y, z)
+    parent.add(mesh)
+  }
+
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const cx = Math.cos(a) * (windowSize + 8)
+    const cy = Math.sin(a) * (windowSize + 8)
+    const port = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.55, 18), mat)
+    port.rotation.x = Math.PI / 2
+    port.position.set(cx, cy, z + 0.02)
+    parent.add(port)
+
+    for (let i = -2; i <= 2; i++) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.35, 9, 0.45), lineMat)
+      rib.position.set(cx * 0.72 + i * 1.1 * Math.sin(a), cy * 0.72 - i * 1.1 * Math.cos(a), z + 0.12)
+      rib.rotation.z = a
+      parent.add(rib)
+    }
+  }
+}
+
 function _addGasketPattern(parent, surfZ, front) {
   const c = CELL_CONFIG
   const flatR = c.diameter / 2 - 3
-  const cornerR = 5
   const spacing = 2.5
   const lineW = 0.25
   const lineH = 0.35
@@ -636,9 +721,9 @@ function _addGasketPattern(parent, surfZ, front) {
     roughness: 0.5
   })
 
-  // 水平方向平行线，裁剪到圆角方形边界
+  // 水平方向平行线，裁剪到圆形边界
   for (let y = -flatR; y <= flatR; y += spacing) {
-    const xExt = _squircleXExtent(flatR, cornerR, y)
+    const xExt = _circleXExtent(flatR, y)
     if (xExt < 2) continue
     const lineGeo = new THREE.BoxGeometry(xExt * 2, lineW, lineH)
     const line = new THREE.Mesh(lineGeo, mat)
@@ -648,7 +733,7 @@ function _addGasketPattern(parent, surfZ, front) {
 
   // 垂直方向平行线（真交叉纹路）
   for (let x = -flatR; x <= flatR; x += spacing) {
-    const yExt = _squircleXExtent(flatR, cornerR, x)
+    const yExt = _circleXExtent(flatR, x)
     if (yExt < 2) continue
     const lineGeo = new THREE.BoxGeometry(lineW, yExt * 2, lineH)
     const line = new THREE.Mesh(lineGeo, mat)
@@ -662,75 +747,70 @@ function _addGasketPattern(parent, surfZ, front) {
 // ─────────────────────────────────────────────────────────────────────────────
 function _addFlowChannelGroove(parent, surfZ) {
   const c = CELL_CONFIG
-  const grooveDepth = 0.3
+  const side = surfZ >= 0 ? 1 : -1
+  const grooveDepth = c.flowChannel.grooveDepth
   const grooveSize = c.flowChannel.recessSize
   const channelW = c.flowChannel.grooveWidth
+  const topZ = surfZ + side * 0.18
 
-  const borderMat = new THREE.MeshStandardMaterial({
-    color: 0x808080,
+  const recessMat = new THREE.MeshStandardMaterial({
+    color: 0xaeb5b9,
     metalness: 0.85,
-    roughness: 0.3
+    roughness: 0.32
+  })
+  const channelMat = new THREE.MeshStandardMaterial({
+    color: 0x5f666b,
+    metalness: 0.88,
+    roughness: 0.38
+  })
+  const portMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2d30,
+    metalness: 0.55,
+    roughness: 0.55
   })
 
-  const borderH = 0.5
-  const borders = [
-    { w: grooveSize + 2, h: 1.5, x: 0, y: grooveSize / 2 + 1 },
-    { w: grooveSize + 2, h: 1.5, x: 0, y: -grooveSize / 2 - 1 },
-    { w: 1.5, h: grooveSize + 2, x: -grooveSize / 2 - 1, y: 0 },
-    { w: 1.5, h: grooveSize + 2, x: grooveSize / 2 + 1, y: 0 },
-  ]
+  const recess = new THREE.Mesh(new THREE.BoxGeometry(grooveSize, grooveSize, grooveDepth), recessMat)
+  recess.position.set(0, 0, surfZ + side * grooveDepth / 2)
+  parent.add(recess)
 
-  for (const b of borders) {
-    const geo = new THREE.BoxGeometry(b.w, b.h, grooveDepth + borderH)
-    const mesh = new THREE.Mesh(geo, borderMat)
-    mesh.position.set(b.x, b.y, surfZ + grooveDepth / 2 + borderH / 2)
-    parent.add(mesh)
+  const rimW = 1.1
+  const rimZ = surfZ + side * (grooveDepth + 0.12)
+  for (const b of [
+    { w: grooveSize + 3, h: rimW, x: 0, y: grooveSize / 2 + rimW },
+    { w: grooveSize + 3, h: rimW, x: 0, y: -grooveSize / 2 - rimW },
+    { w: rimW, h: grooveSize + 3, x: -grooveSize / 2 - rimW, y: 0 },
+    { w: rimW, h: grooveSize + 3, x: grooveSize / 2 + rimW, y: 0 }
+  ]) {
+    const rim = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, 0.35), channelMat)
+    rim.position.set(b.x, b.y, rimZ)
+    parent.add(rim)
   }
 
-  const channelMat = new THREE.MeshStandardMaterial({
-    color: 0x303030,
-    metalness: 0.7,
-    roughness: 0.4
-  })
+  const laneCount = 8
+  const laneSpacing = grooveSize / (laneCount + 1)
+  for (let i = 0; i < laneCount; i++) {
+    const x = -grooveSize / 2 + laneSpacing * (i + 1)
+    const lane = new THREE.Mesh(new THREE.BoxGeometry(channelW, grooveSize - 4, 0.42), channelMat)
+    lane.position.set(x, 0, topZ + side * 0.18)
+    parent.add(lane)
+  }
 
-  const numRows = 6
-  const rowSpacing = grooveSize / (numRows + 1)
+  const portR = grooveSize / 2 + 7
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const px = Math.cos(a) * portR
+    const py = Math.sin(a) * portR
+    const port = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.5, 18), portMat)
+    port.rotation.x = Math.PI / 2
+    port.position.set(px, py, topZ + side * 0.22)
+    parent.add(port)
 
-  for (let row = 0; row < numRows; row++) {
-    const y = -grooveSize / 2 + rowSpacing * (row + 1)
-    const goingRight = row % 2 === 0
-
-    const segLen = grooveSize - rowSpacing
-    const segGeo = new THREE.BoxGeometry(segLen, channelW, grooveDepth)
-    const seg = new THREE.Mesh(segGeo, channelMat)
-    seg.position.set(goingRight ? 0 : 0, y, surfZ + grooveDepth / 2)
-    parent.add(seg)
-
-    if (row < numRows - 1) {
-      const turnX = goingRight ? grooveSize / 2 - rowSpacing / 2 : -grooveSize / 2 + rowSpacing / 2
-      const turnGeo = new THREE.BoxGeometry(channelW, rowSpacing, grooveDepth)
-      const turn = new THREE.Mesh(turnGeo, channelMat)
-      turn.position.set(turnX, y + rowSpacing / 2, surfZ + grooveDepth / 2)
-      parent.add(turn)
+    for (let i = -2; i <= 2; i++) {
+      const branch = new THREE.Mesh(new THREE.BoxGeometry(0.45, 10, 0.36), channelMat)
+      branch.position.set(px * 0.65 + i * 1.15 * Math.sin(a), py * 0.65 - i * 1.15 * Math.cos(a), topZ + side * 0.16)
+      branch.rotation.z = a
+      parent.add(branch)
     }
   }
-
-  const portMat = new THREE.MeshStandardMaterial({
-    color: 0x202020,
-    metalness: 0.5,
-    roughness: 0.5
-  })
-
-  const portGeo = new THREE.CylinderGeometry(1.5, 1.5, grooveDepth, 12)
-  const port1 = new THREE.Mesh(portGeo, portMat)
-  port1.rotation.x = Math.PI / 2
-  port1.position.set(0, grooveSize / 2 + 3, surfZ + grooveDepth / 2)
-  parent.add(port1)
-
-  const port2 = new THREE.Mesh(portGeo, portMat)
-  port2.rotation.x = Math.PI / 2
-  port2.position.set(0, -grooveSize / 2 - 3, surfZ + grooveDepth / 2)
-  parent.add(port2)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -738,41 +818,27 @@ function _addFlowChannelGroove(parent, surfZ) {
 // ─────────────────────────────────────────────────────────────────────────────
 function _addPlateBlackGasket(parent, surfZ) {
   const c = CELL_CONFIG
+  const side = surfZ >= 0 ? 1 : -1
   const bgT = c.blackGasket.thickness
 
   const mat = MaterialPresets.gasket()
 
-  const rx = c.blackGasket.width / 2
-  const ry = c.blackGasket.height / 2
-  const radius = 5
-
-  const shape = new THREE.Shape()
-  shape.moveTo(-rx + radius, -ry)
-  shape.lineTo(rx - radius, -ry)
-  shape.quadraticCurveTo(rx, -ry, rx, -ry + radius)
-  shape.lineTo(rx, ry - radius)
-  shape.quadraticCurveTo(rx, ry, rx - radius, ry)
-  shape.lineTo(-rx + radius, ry)
-  shape.quadraticCurveTo(-rx, ry, -rx, ry - radius)
-  shape.lineTo(-rx, -ry + radius)
-  shape.quadraticCurveTo(-rx, -ry, -rx + radius, -ry)
-
-  const holeR = 15
-  const hole = new THREE.Path()
-  for (let i = 0; i <= 32; i++) {
-    const a = (i / 32) * Math.PI * 2
-    const x = Math.cos(a) * holeR
-    const y = Math.sin(a) * holeR
-    if (i === 0) hole.moveTo(x, y)
-    else hole.lineTo(x, y)
-  }
-  shape.holes.push(hole)
-
+  const shape = _makeWavySealShape(25, 5.6, 4.2, 128)
   const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
-  mesh.position.z = surfZ + bgT / 2
+  mesh.position.z = surfZ + side * (bgT / 2 + 0.22)
   parent.add(mesh)
+
+  const holeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.1, roughness: 0.85 })
+  const holeGeo = new THREE.CylinderGeometry(2.7, 2.7, bgT + 0.2, 18)
+  const holeR = 24
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const hole = new THREE.Mesh(holeGeo, holeMat)
+    hole.rotation.x = Math.PI / 2
+    hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, mesh.position.z + side * 0.05)
+    parent.add(hole)
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -883,6 +949,62 @@ function _makeExpandedMesh(name, zPos) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 四叶形O-ring
 // ─────────────────────────────────────────────────────────────────────────────
+function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 96) {
+  const outer = new THREE.Shape()
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI * 2
+    const r = radiusBase + radiusAmp * Math.cos(4 * a)
+    const x = Math.cos(a) * r
+    const y = Math.sin(a) * r
+    if (i === 0) outer.moveTo(x, y)
+    else outer.lineTo(x, y)
+  }
+  outer.closePath()
+
+  const inner = new THREE.Path()
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI * 2
+    const r = radiusBase + radiusAmp * Math.cos(4 * a) - tubeWidth
+    const x = Math.cos(a) * r
+    const y = Math.sin(a) * r
+    if (i === 0) inner.moveTo(x, y)
+    else inner.lineTo(x, y)
+  }
+  inner.closePath()
+  outer.holes.push(inner)
+  return outer
+}
+
+function _addPhotoCloverSealAt(parent, surfZ) {
+  const side = surfZ >= 0 ? 1 : -1
+  const mat = MaterialPresets.oRing()
+  const geo = new THREE.ExtrudeGeometry(_makeWavySealShape(22, 4.5, 3.4), {
+    depth: 1.2,
+    bevelEnabled: true,
+    bevelThickness: 0.25,
+    bevelSize: 0.25,
+    bevelSegments: 3
+  })
+  geo.translate(0, 0, -0.6)
+  const seal = new THREE.Mesh(geo, mat)
+  seal.position.z = surfZ + side * 0.72
+  parent.add(seal)
+
+  const holeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.1, roughness: 0.9 })
+  const holeGeo = new THREE.CylinderGeometry(2.4, 2.4, 1.4, 18)
+  const holeR = 20.5
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const hole = new THREE.Mesh(holeGeo, holeMat)
+    hole.rotation.x = Math.PI / 2
+    hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, seal.position.z + side * 0.05)
+    parent.add(hole)
+  }
+}
+
+function _addPhotoCloverSeal(parent, gasketT) {
+  _addPhotoCloverSealAt(parent, gasketT / 2)
+}
+
 function _addCloverOring(parent, gasketT) {
   const mat = MaterialPresets.oRing()
   const tubeR = 2.0
@@ -926,6 +1048,23 @@ function _addCloverOring(parent, gasketT) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 螺栓通孔
 // ─────────────────────────────────────────────────────────────────────────────
+function _addBrushedDiscLines(parent, radius, z, color = 0xbfc4c8) {
+  const mat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.28,
+    depthWrite: false
+  })
+  for (let y = -radius + 7; y <= radius - 7; y += 3.2) {
+    const half = Math.sqrt(Math.max(0, radius * radius - y * y)) - 4
+    if (half <= 3) continue
+    const geo = new THREE.BoxGeometry(half * 2, 0.12, 0.04)
+    const line = new THREE.Mesh(geo, mat)
+    line.position.set(0, y, z)
+    parent.add(line)
+  }
+}
+
 function _addBoltHoles(parent, thickness, count) {
   const c = CELL_CONFIG
   const pcdR = c.bolt.pcd / 2
@@ -937,7 +1076,7 @@ function _addBoltHoles(parent, thickness, count) {
   const holeGeo = new THREE.CylinderGeometry(hR, hR, thickness * 1.1, 12)
 
   for (let i = 0; i < count; i++) {
-    const angle = (i / count) * Math.PI * 2
+    const angle = (i / count) * Math.PI * 2 + Math.PI / count
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
     const hole = new THREE.Mesh(holeGeo, holeMat)
@@ -961,7 +1100,7 @@ function _addPlateBoltHoles(parent, plateT) {
   const holeGeo = new THREE.CylinderGeometry(hR, hR, plateT * 1.1, 12)
 
   for (let i = 0; i < 8; i++) {
-    const angle = (i / 8) * Math.PI * 2
+    const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
     const hole = new THREE.Mesh(holeGeo, holeMat)
@@ -976,21 +1115,49 @@ function _addPlateBoltHoles(parent, plateT) {
 // ─────────────────────────────────────────────────────────────────────────────
 function _addMountingLug(parent, plateR, plateT, isAnode) {
   const c = CELL_CONFIG
-  const mat = MaterialPresets.conductive()
+  const mat = MaterialPresets.busLug()
   const holeMat = new THREE.MeshStandardMaterial({ color: 0x404040, metalness: 0.3, roughness: 0.7 })
 
   const lugW = c.lug.width
   const lugL = c.lug.length
-  const lugMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(lugW, lugL, plateT), mat)
-  lugMesh.position.set(0, -(plateR + lugL / 2 - 1), 0)
-  lugMesh.castShadow = true
-  parent.add(lugMesh)
+  const holeR = c.lug.holeRadius || 2.5
 
-  const holeGeo = new THREE.CylinderGeometry(2.5, 2.5, plateT * 1.3, 16)
+  const shape = new THREE.Shape()
+  const halfW = lugW / 2
+  const neck = 3
+  shape.moveTo(0, -halfW)
+  shape.lineTo(lugL - halfW, -halfW)
+  shape.absarc(lugL - halfW, 0, halfW, -Math.PI / 2, Math.PI / 2, false)
+  shape.lineTo(0, halfW)
+  shape.quadraticCurveTo(-neck, halfW, -neck, 0)
+  shape.quadraticCurveTo(-neck, -halfW, 0, -halfW)
+  shape.closePath()
+
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: plateT,
+    bevelEnabled: true,
+    bevelThickness: 0.15,
+    bevelSize: 0.25,
+    bevelSegments: 2
+  })
+  geo.translate(0, 0, -plateT / 2)
+  const lugMesh = new THREE.Mesh(geo, mat)
+  lugMesh.castShadow = true
+
+  const holeGeo = new THREE.CylinderGeometry(holeR, holeR, plateT * 1.3, 16)
   const hole = new THREE.Mesh(holeGeo, holeMat)
   hole.rotation.x = Math.PI / 2
-  hole.position.set(0, -(plateR + lugL * 0.55), 0)
+
+  if (isAnode) {
+    lugMesh.position.set(-(plateR - 1), 0, 0)
+    lugMesh.rotation.z = Math.PI
+    hole.position.set(-(plateR + lugL - halfW - 1), 0, 0)
+  } else {
+    lugMesh.position.set(plateR - 1, 0, 0)
+    hole.position.set(plateR + lugL - halfW - 1, 0, 0)
+  }
+
+  parent.add(lugMesh)
   parent.add(hole)
 }
 
@@ -1001,58 +1168,95 @@ function _addGasPorts(parent, portFaceZ) {
   const mat = MaterialPresets.gasPort()
   const boreMat = new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 0.1, roughness: 0.9 })
 
-  // 2个气液接头：对角线位置，带凸台和颜色区分
-  const layout = [
-    { x: -12, y: 12, hexR: 5.5, bodyR: 3.5, bodyH: 10, capColor: 0xdd5566 },  // 粉红色
-    { x: 12, y: -12, hexR: 5.5, bodyR: 3.5, bodyH: 10, capColor: 0x4477bb },  // 蓝色
+  // 4 elements arranged at 12, 3, 6, 9 o'clock.
+  // 12, 3, 9 o'clock are push-in fittings.
+  // 6 o'clock is a hex socket plug.
+  const fittings = [
+    { x: 0, y: 24 },      // 12 o'clock
+    { x: 20, y: 9 },      // 2 o'clock
+    { x: -20, y: 9 },     // 10 o'clock
   ]
 
-  for (const p of layout) {
+  for (const p of fittings) {
     const sub = new THREE.Group()
+    const hexR = 6.2
+    const bodyR = 4.1
+    const bodyH = 10.5
+
     const flange = new THREE.Mesh(
-      new THREE.CylinderGeometry(p.hexR + 1, p.hexR + 1, 2, 20), mat)
+      new THREE.CylinderGeometry(hexR + 1, hexR + 1, 2, 20), mat)
     flange.rotation.x = Math.PI / 2
     flange.position.z = portFaceZ + 1
     sub.add(flange)
 
-    const hexR = p.hexR / Math.cos(Math.PI / 6)
-    const hex = new THREE.Mesh(new THREE.CylinderGeometry(hexR, hexR, 7, 6), mat)
+    const hexRadius = hexR / Math.cos(Math.PI / 6)
+    const hex = new THREE.Mesh(new THREE.CylinderGeometry(hexRadius, hexRadius, 7, 6), mat)
     hex.rotation.x = Math.PI / 2
     hex.position.z = portFaceZ + 4.5
     sub.add(hex)
 
     const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(p.bodyR, p.bodyR, p.bodyH, 16), mat)
+      new THREE.CylinderGeometry(bodyR, bodyR, bodyH, 16), mat)
     tube.rotation.x = Math.PI / 2
-    tube.position.z = portFaceZ + 5 + p.bodyH / 2
+    tube.position.z = portFaceZ + 5 + bodyH / 2
     sub.add(tube)
 
     const bore = new THREE.Mesh(
-      new THREE.CylinderGeometry(p.bodyR * 0.6, p.bodyR * 0.6, p.bodyH + 8, 12), boreMat)
+      new THREE.CylinderGeometry(bodyR * 0.62, bodyR * 0.62, 0.45, 16), boreMat)
     bore.rotation.x = Math.PI / 2
-    bore.position.z = portFaceZ + p.bodyH / 2 + 2
+    bore.position.z = portFaceZ + 5 + bodyH + 2.25
     sub.add(bore)
 
-    // 颜色区分盖帽
-    const capMat = new THREE.MeshStandardMaterial({ color: p.capColor, metalness: 0.3, roughness: 0.6 })
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(p.bodyR + 0.5, p.bodyR + 0.5, 2, 16), capMat)
+    // Stainless steel cap
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(bodyR + 0.5, bodyR + 0.5, 2, 16), mat)
     cap.rotation.x = Math.PI / 2
-    cap.position.z = portFaceZ + 5 + p.bodyH + 1
+    cap.position.z = portFaceZ + 5 + bodyH + 1
     sub.add(cap)
 
     sub.position.set(p.x, p.y, 0)
     parent.add(sub)
   }
 
-  const cp = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 6, 16), mat)
-  cp.rotation.x = Math.PI / 2
-  cp.position.z = portFaceZ + 3
-  parent.add(cp)
+}
 
-  const cb = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 8, 12), boreMat)
-  cb.rotation.x = Math.PI / 2
-  cb.position.z = portFaceZ + 3
-  parent.add(cb)
+function _addHexSocketPlug(parent, x, y, z) {
+  const mat = MaterialPresets.gasPort()
+  const boreMat = new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 0.1, roughness: 0.9 })
+  const plug = _makeHexSocketPlug(4.7, 3.5, mat, boreMat)
+  plug.position.set(x, y, z)
+  parent.add(plug)
+}
+
+function _makeHexSocketPlug(radius, height, mat, boreMat) {
+  const socketR = 2.0
+  const circumR = socketR / Math.cos(Math.PI / 6)
+
+  const outer = new THREE.Shape()
+  outer.absarc(0, 0, radius, 0, Math.PI * 2, false)
+
+  const hole = new THREE.Path()
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2
+    const hx = Math.cos(a) * circumR
+    const hy = Math.sin(a) * circumR
+    if (i === 0) hole.moveTo(hx, hy)
+    else hole.lineTo(hx, hy)
+  }
+  hole.closePath()
+  outer.holes.push(hole)
+
+  const geo = new THREE.ExtrudeGeometry(outer, { depth: height, bevelEnabled: false })
+  geo.translate(0, 0, -height / 2)
+  const mesh = new THREE.Mesh(geo, mat)
+
+  const bottomGeo = new THREE.CylinderGeometry(socketR, socketR, 0.5, 6)
+  const bottom = new THREE.Mesh(bottomGeo, boreMat)
+  bottom.rotation.x = Math.PI / 2
+  bottom.position.z = -height / 2 + 0.25
+
+  const group = new THREE.Group()
+  group.add(mesh, bottom)
+  return group
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1085,7 +1289,7 @@ function _makeBolts(z) {
   const threadCenterZ = topFace - 2 + threadLen / 2
 
   for (let i = 0; i < bCfg.count; i++) {
-    const angle = (i / bCfg.count) * Math.PI * 2
+    const angle = (i / bCfg.count) * Math.PI * 2 + Math.PI / bCfg.count
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
 
@@ -1099,6 +1303,15 @@ function _makeBolts(z) {
     thread.rotation.x = Math.PI / 2
     thread.position.set(x, y, threadCenterZ)
     group.add(thread)
+
+    for (let j = 0; j < 12; j++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(bCfg.diameter / 2 + 0.28, 0.11, 6, 18),
+        threadMat
+      )
+      ring.position.set(x, y, topFace + 0.4 + j * 1.15)
+      group.add(ring)
+    }
   }
 
   group.position.z = z.bolts
@@ -1139,7 +1352,7 @@ function _makeNuts(z) {
   nutGeo.translate(0, 0, -bCfg.nutHeight / 2)
 
   for (let i = 0; i < bCfg.count; i++) {
-    const angle = (i / bCfg.count) * Math.PI * 2
+    const angle = (i / bCfg.count) * Math.PI * 2 + Math.PI / bCfg.count
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
     const nut = new THREE.Mesh(nutGeo, nutMat)
@@ -1173,7 +1386,7 @@ function _makeFlatWashers(z) {
   })
 
   for (let i = 0; i < bCfg.count; i++) {
-    const angle = (i / bCfg.count) * Math.PI * 2
+    const angle = (i / bCfg.count) * Math.PI * 2 + Math.PI / bCfg.count
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
 

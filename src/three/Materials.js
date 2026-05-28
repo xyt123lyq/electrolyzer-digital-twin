@@ -102,7 +102,7 @@ export const MaterialPresets = {
   // O形圈 — 丁腈橡胶: 哑光黑, 微弹性光泽
   gasket() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x5C1A12,
+      color: 0x050505,
       metalness: 0.0,
       roughness: 0.55,
       envMapIntensity: 0.5,
@@ -180,12 +180,12 @@ export const MaterialPresets = {
   // 气液接头 — 镀铬不锈钢: 高反射镜面
   gasPort() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xd0d8e0,
-      metalness: 0.96,
-      roughness: 0.12,
-      envMapIntensity: 2.0,
-      clearcoat: 0.5,
-      clearcoatRoughness: 0.1
+      color: 0xf2f5f7,
+      metalness: 0.72,
+      roughness: 0.24,
+      envMapIntensity: 2.4,
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.16
     })
   },
 
@@ -211,7 +211,7 @@ export const MaterialPresets = {
 
   oRing() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x4A1510,
+      color: 0x050505,
       metalness: 0.0,
       roughness: 0.50,
       clearcoat: 0.25,
@@ -224,17 +224,17 @@ export const MaterialPresets = {
 
   membrane() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x4fb6ff,
-      metalness: 0.05,
-      roughness: 0.12,
-      transmission: 0.55,
-      thickness: 0.4,
+      color: 0xb8bec4,
+      metalness: 0.02,
+      roughness: 0.22,
+      transmission: 0.35,
+      thickness: 0.3,
       transparent: true,
-      opacity: 0.70,
-      emissive: 0x1e6cff,
-      emissiveIntensity: 0.28,
-      clearcoat: 0.6,
-      clearcoatRoughness: 0.2,
+      opacity: 0.52,
+      emissive: 0x5c6872,
+      emissiveIntensity: 0.08,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.28,
       side: THREE.DoubleSide
     })
   },
