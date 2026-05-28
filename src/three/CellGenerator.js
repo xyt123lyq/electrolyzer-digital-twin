@@ -541,7 +541,7 @@ function _makeThinWhite(name, zPos) {
   // 带方窗的圆形垫片
   const shape = _makeCircleShape(flatR)
 
-  const windowSize = c.mea.size + 6
+  const windowSize = c.mea.size / 2 + 3
   const window = new THREE.Path()
   window.moveTo(-windowSize, -windowSize)
   window.lineTo(windowSize, -windowSize)
@@ -581,15 +581,18 @@ function _circleXExtent(radius, y) {
 function _addCrosshatchTexture(parent, surfZ, front) {
   const c = CELL_CONFIG
   const flatR = c.diameter / 2 - 3
-  const spacing = 2.5
-  const lineW = 0.25
-  const lineH = 0.35
+  const spacing = 4.8
+  const lineW = 0.10
+  const lineH = 0.08
   const zOff = front ? -lineH / 2 : lineH / 2
 
   const mat = new THREE.MeshStandardMaterial({
-    color: 0xB8B4A8,
-    metalness: 0.1,
-    roughness: 0.5
+    color: 0xd4d1c6,
+    metalness: 0.04,
+    roughness: 0.62,
+    transparent: true,
+    opacity: 0.5,
+    depthWrite: false
   })
 
   // 水平方向平行线，裁剪到圆形边界
@@ -662,63 +665,57 @@ function _addSquareOring(parent, windowSize, gasketT) {
 // ─────────────────────────────────────────────────────────────────────────────
 function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
   const side = surfZ >= 0 ? 1 : -1
-  const mat = new THREE.MeshPhysicalMaterial({
-    color: 0xf8f8f3,
+  const reliefMat = new THREE.MeshPhysicalMaterial({
+    color: 0xf4f4ec,
     metalness: 0,
-    roughness: 0.28,
-    clearcoat: 0.45,
-    clearcoatRoughness: 0.35
+    roughness: 0.46,
+    clearcoat: 0.32,
+    clearcoatRoughness: 0.42,
+    transparent: true,
+    opacity: 0.82
   })
-  const lineMat = new THREE.MeshStandardMaterial({
-    color: 0xd8d8d0,
-    metalness: 0.05,
-    roughness: 0.45
-  })
-  const z = surfZ + side * 0.28
-  const half = windowSize + 4
-  const edgeW = 1.2
+  const reliefH = 0.075
+  const z = surfZ + side * (reliefH / 2 + 0.015)
 
-  const bars = [
-    { w: half * 2, h: edgeW, x: 0, y: half },
-    { w: half * 2, h: edgeW, x: 0, y: -half },
-    { w: edgeW, h: half * 2, x: half, y: 0 },
-    { w: edgeW, h: half * 2, x: -half, y: 0 }
-  ]
-  for (const b of bars) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, 0.5), mat)
-    mesh.position.set(b.x, b.y, z)
-    parent.add(mesh)
-  }
+  const reliefShape = _makeWavySealShape(windowSize + 5.8, 3.9, 1.15, 128)
+  const reliefGeo = new THREE.ExtrudeGeometry(reliefShape, {
+    depth: reliefH,
+    bevelEnabled: true,
+    bevelThickness: 0.015,
+    bevelSize: 0.035,
+    bevelSegments: 2
+  })
+  reliefGeo.translate(0, 0, -reliefH / 2)
+  const relief = new THREE.Mesh(reliefGeo, reliefMat)
+  relief.position.z = z
+  parent.add(relief)
 
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-    const cx = Math.cos(a) * (windowSize + 8)
-    const cy = Math.sin(a) * (windowSize + 8)
-    const port = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.55, 18), mat)
-    port.rotation.x = Math.PI / 2
-    port.position.set(cx, cy, z + 0.02)
-    parent.add(port)
+    const cx = Math.cos(a) * (windowSize + 5.8)
+    const cy = Math.sin(a) * (windowSize + 5.8)
 
-    for (let i = -2; i <= 2; i++) {
-      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.35, 9, 0.45), lineMat)
-      rib.position.set(cx * 0.72 + i * 1.1 * Math.sin(a), cy * 0.72 - i * 1.1 * Math.cos(a), z + 0.12)
-      rib.rotation.z = a
-      parent.add(rib)
-    }
+    const port = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, reliefH, 24), reliefMat)
+    port.rotation.x = Math.PI / 2
+    port.position.set(cx, cy, z + side * 0.006)
+    parent.add(port)
   }
 }
 
 function _addGasketPattern(parent, surfZ, front) {
   const c = CELL_CONFIG
   const flatR = c.diameter / 2 - 3
-  const spacing = 2.5
-  const lineW = 0.25
-  const lineH = 0.35
+  const spacing = 4.2
+  const lineW = 0.13
+  const lineH = 0.10
   const zOff = front ? -lineH / 2 : lineH / 2
 
   const mat = new THREE.MeshStandardMaterial({
-    color: 0xB0ACA0,
-    metalness: 0.1,
-    roughness: 0.5
+    color: 0xd2cec2,
+    metalness: 0.06,
+    roughness: 0.66,
+    transparent: true,
+    opacity: 0.58,
+    depthWrite: false
   })
 
   // 水平方向平行线，裁剪到圆形边界
@@ -750,18 +747,18 @@ function _addFlowChannelGroove(parent, surfZ) {
   const side = surfZ >= 0 ? 1 : -1
   const grooveDepth = c.flowChannel.grooveDepth
   const grooveSize = c.flowChannel.recessSize
-  const channelW = c.flowChannel.grooveWidth
-  const topZ = surfZ + side * 0.18
+  const channelW = c.flowChannel.grooveWidth * 0.55
+  const grooveFaceZ = surfZ + side * (grooveDepth + 0.025)
 
   const recessMat = new THREE.MeshStandardMaterial({
-    color: 0xaeb5b9,
+    color: 0xb7bec2,
     metalness: 0.85,
-    roughness: 0.32
+    roughness: 0.36
   })
   const channelMat = new THREE.MeshStandardMaterial({
-    color: 0x5f666b,
+    color: 0x697075,
     metalness: 0.88,
-    roughness: 0.38
+    roughness: 0.42
   })
   const portMat = new THREE.MeshStandardMaterial({
     color: 0x2a2d30,
@@ -773,40 +770,40 @@ function _addFlowChannelGroove(parent, surfZ) {
   recess.position.set(0, 0, surfZ + side * grooveDepth / 2)
   parent.add(recess)
 
-  const rimW = 1.1
-  const rimZ = surfZ + side * (grooveDepth + 0.12)
+  const rimW = 0.75
+  const rimZ = grooveFaceZ + side * 0.01
   for (const b of [
-    { w: grooveSize + 3, h: rimW, x: 0, y: grooveSize / 2 + rimW },
-    { w: grooveSize + 3, h: rimW, x: 0, y: -grooveSize / 2 - rimW },
-    { w: rimW, h: grooveSize + 3, x: -grooveSize / 2 - rimW, y: 0 },
-    { w: rimW, h: grooveSize + 3, x: grooveSize / 2 + rimW, y: 0 }
+    { w: grooveSize + 1.4, h: rimW, x: 0, y: grooveSize / 2 + rimW / 2 },
+    { w: grooveSize + 1.4, h: rimW, x: 0, y: -grooveSize / 2 - rimW / 2 },
+    { w: rimW, h: grooveSize + 1.4, x: -grooveSize / 2 - rimW / 2, y: 0 },
+    { w: rimW, h: grooveSize + 1.4, x: grooveSize / 2 + rimW / 2, y: 0 }
   ]) {
-    const rim = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, 0.35), channelMat)
+    const rim = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, 0.12), channelMat)
     rim.position.set(b.x, b.y, rimZ)
     parent.add(rim)
   }
 
-  const laneCount = 8
+  const laneCount = 11
   const laneSpacing = grooveSize / (laneCount + 1)
   for (let i = 0; i < laneCount; i++) {
-    const x = -grooveSize / 2 + laneSpacing * (i + 1)
-    const lane = new THREE.Mesh(new THREE.BoxGeometry(channelW, grooveSize - 4, 0.42), channelMat)
-    lane.position.set(x, 0, topZ + side * 0.18)
+    const y = -grooveSize / 2 + laneSpacing * (i + 1)
+    const lane = new THREE.Mesh(new THREE.BoxGeometry(grooveSize - 5.2, channelW, 0.11), channelMat)
+    lane.position.set(0, y, grooveFaceZ + side * 0.035)
     parent.add(lane)
   }
 
-  const portR = grooveSize / 2 + 7
+  const portR = grooveSize / 2 + 6.5
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const px = Math.cos(a) * portR
     const py = Math.sin(a) * portR
-    const port = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.5, 18), portMat)
+    const port = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.16, 18), portMat)
     port.rotation.x = Math.PI / 2
-    port.position.set(px, py, topZ + side * 0.22)
+    port.position.set(px, py, grooveFaceZ + side * 0.05)
     parent.add(port)
 
-    for (let i = -2; i <= 2; i++) {
-      const branch = new THREE.Mesh(new THREE.BoxGeometry(0.45, 10, 0.36), channelMat)
-      branch.position.set(px * 0.65 + i * 1.15 * Math.sin(a), py * 0.65 - i * 1.15 * Math.cos(a), topZ + side * 0.16)
+    for (let i = -1; i <= 1; i++) {
+      const branch = new THREE.Mesh(new THREE.BoxGeometry(0.28, 9.5, 0.10), channelMat)
+      branch.position.set(px * 0.66 + i * 0.85 * Math.sin(a), py * 0.66 - i * 0.85 * Math.cos(a), grooveFaceZ + side * 0.035)
       branch.rotation.z = a
       parent.add(branch)
     }
