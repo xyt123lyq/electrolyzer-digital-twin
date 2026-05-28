@@ -392,44 +392,33 @@ function _addBlackGasketOnPattern(parent, zPos) {
 // 极板2D形状与镂空定义
 // ─────────────────────────────────────────────────────────────────────────────
 function _makeCentralCutoutPath() {
-  const W_in = 15.0
-  const r_corner = 2.0
-  const R_port = 24.0
-  const r_port_inner = 5.6
-  const L_straight_in = 9.3
-  const offset_port_in = 4.05
-  const offset_straight_in = 1.665
-
   const path = new THREE.Path()
-  path.moveTo(W_in, -L_straight_in)
+  // Start at top-right corner of the central square recess
+  path.moveTo(15.0, 15.0)
 
-  // Go to bottom-right corner
-  path.lineTo(W_in, -W_in + r_corner)
-  path.absarc(W_in - r_corner, -W_in + r_corner, r_corner, 0, -0.5 * Math.PI, true)
+  // Go diagonally to the top of the right port arch (tangent point)
+  path.lineTo(24.0, 3.2)
 
-  // Go straight across bottom (Closed bottom port)
-  path.lineTo(-W_in + r_corner, -W_in)
-  path.absarc(-W_in + r_corner, -W_in + r_corner, r_corner, -0.5 * Math.PI, -Math.PI, true)
+  // Draw right port arch: centered at (24.0, 0) with radius 3.2, CW from PI/2 to -PI/2
+  path.absarc(24.0, 0, 3.2, Math.PI / 2, -Math.PI / 2, true)
 
-  // Go to left lobe (Open left port loop)
-  path.lineTo(-W_in, -L_straight_in)
-  path.bezierCurveTo(-W_in, -L_straight_in + offset_straight_in, -R_port + offset_port_in, -r_port_inner, -R_port, -r_port_inner)
-  path.absarc(-R_port, 0, r_port_inner, 1.5 * Math.PI, 0.5 * Math.PI, true)
-  path.bezierCurveTo(-R_port + offset_port_in, r_port_inner, -W_in, L_straight_in - offset_straight_in, -W_in, L_straight_in)
+  // Go diagonally to the bottom-right corner of the central square recess
+  path.lineTo(15.0, -15.0)
 
-  // Go to top-left corner
-  path.lineTo(-W_in, W_in - r_corner)
-  path.absarc(-W_in + r_corner, W_in - r_corner, r_corner, -Math.PI, -1.5 * Math.PI, true)
+  // Go horizontally to the bottom-left corner of the central square recess
+  path.lineTo(-15.0, -15.0)
 
-  // Go straight across top (Closed top port)
-  path.lineTo(W_in - r_corner, W_in)
-  path.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
+  // Go diagonally to the bottom of the left port arch (tangent point)
+  path.lineTo(-24.0, -3.2)
 
-  // Go to right lobe (Open right port loop)
-  path.lineTo(W_in, L_straight_in)
-  path.bezierCurveTo(W_in, L_straight_in - offset_straight_in, R_port - offset_port_in, r_port_inner, R_port, r_port_inner)
-  path.absarc(R_port, 0, r_port_inner, 0.5 * Math.PI, -0.5 * Math.PI, true)
-  path.bezierCurveTo(R_port - offset_port_in, -r_port_inner, W_in, -L_straight_in + offset_straight_in, W_in, -L_straight_in)
+  // Draw left port arch: centered at (-24.0, 0) with radius 3.2, CW from -PI/2 to PI/2
+  path.absarc(-24.0, 0, 3.2, -Math.PI / 2, Math.PI / 2, true)
+
+  // Go diagonally to the top-left corner of the central square recess
+  path.lineTo(-15.0, 15.0)
+
+  // Go horizontally back to the start
+  path.lineTo(15.0, 15.0)
 
   path.closePath()
   return path
