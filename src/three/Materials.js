@@ -69,17 +69,14 @@ export const MaterialPresets = {
   // BOM #6/#10 POM白色绝缘垫片 — 工程塑料: 暖白色, 蜡质光泽
   flowPlate() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xF2ECDA,
-      metalness: 0.0,
-      roughness: 0.38,
-      envMapIntensity: 0.6,
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.5,
-      sheen: 0.3,
-      sheenColor: new THREE.Color(0xffffff),
-      sheenRoughness: 0.6,
-      transmission: 0.05,
-      thickness: 2.0,
+      color: 0xfbfbf9,           // Off-white/cream white (never pure #ffffff)
+      metalness: 0.05,
+      roughness: 0.35,          // Satin surface finish
+      envMapIntensity: 0.8,
+      clearcoat: 0.1,           // Slight protective sheen
+      clearcoatRoughness: 0.4,
+      transmission: 0.12,       // Subtle edge translucency
+      thickness: 2.0,           // Simulates physical edge refraction
       ior: 1.48
     })
   },
@@ -87,29 +84,29 @@ export const MaterialPresets = {
   // 薄垫片用 — 暖白色POM，无transmission
   thinGasket() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xEFE6D2,
-      metalness: 0.0,
-      roughness: 0.38,
-      envMapIntensity: 0.7,
-      clearcoat: 0.10,
-      clearcoatRoughness: 0.60,
-      sheen: 0.15,
-      sheenColor: new THREE.Color(0xffffff),
-      sheenRoughness: 0.55
+      color: 0xfbfbf9,           // Matching premium Teflon PTFE
+      metalness: 0.05,
+      roughness: 0.35,
+      envMapIntensity: 0.8,
+      clearcoat: 0.1,
+      clearcoatRoughness: 0.4,
+      transmission: 0.08,        // Slightly less transmission for thinner sheets
+      thickness: 0.8,
+      ior: 1.48
     })
   },
 
   // O形圈 — 丁腈橡胶: 哑光黑, 微弹性光泽
   gasket() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x050505,
-      metalness: 0.0,
-      roughness: 0.55,
-      envMapIntensity: 0.5,
-      clearcoat: 0.2,
-      clearcoatRoughness: 0.6,
-      sheen: 0.4,
-      sheenColor: new THREE.Color(0x333333),
+      color: 0x151515,          // Deep charcoal black (never pure #000000)
+      metalness: 0.05,
+      roughness: 0.60,          // Dull, scattering surface
+      envMapIntensity: 0.6,
+      clearcoat: 0.08,          // Slight surface lubrication/sheen
+      clearcoatRoughness: 0.65,
+      sheen: 0.2,
+      sheenColor: new THREE.Color(0x2b2b2b),
       sheenRoughness: 0.8
     })
   },
@@ -211,14 +208,15 @@ export const MaterialPresets = {
 
   oRing() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x050505,
-      metalness: 0.0,
-      roughness: 0.50,
-      clearcoat: 0.25,
-      clearcoatRoughness: 0.55,
-      sheen: 0.5,
-      sheenColor: new THREE.Color(0x2a2a2a),
-      sheenRoughness: 0.75
+      color: 0x151515,          // Deep charcoal black EPDM Viton rubber
+      metalness: 0.05,
+      roughness: 0.60,
+      envMapIntensity: 0.6,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.65,
+      sheen: 0.2,
+      sheenColor: new THREE.Color(0x2b2b2b),
+      sheenRoughness: 0.8
     })
   },
 

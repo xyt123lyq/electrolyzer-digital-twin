@@ -271,7 +271,7 @@ function _makePinkCover(name, isTop, zPos) {
   group.add(body)
 
   _addBoltHoles(group, T, 8)
-  _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
+  // _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
 
   if (isTop) {
     _addGasPorts(group, T / 2)
@@ -303,8 +303,8 @@ function _makeWhiteGasketWithPattern(name, zPos) {
   body.castShadow = true
   group.add(body)
 
-  _addGasketPattern(group, T / 2, true)
-  _addGasketPattern(group, -T / 2, false)
+  // _addGasketPattern(group, T / 2, true)
+  // _addGasketPattern(group, -T / 2, false)
 
   _addBoltHoles(group, T, 8)
   _addPhotoCloverSealAt(group, T / 2)
@@ -335,7 +335,7 @@ function _makeWhiteGasketWithPatternBottom(name, zPos) {
   body.castShadow = true
   group.add(body)
 
-  _addGasketPattern(group, T / 2, true)
+  // _addGasketPattern(group, T / 2, true)
   _addBoltHoles(group, T, 8)
   _addPhotoCloverSealAt(group, T / 2)
 
@@ -405,10 +405,10 @@ function _makeAnodePlate(name, zPos) {
   disc.rotation.x = Math.PI / 2
   disc.castShadow = true
   group.add(disc)
-  _addBrushedDiscLines(group, R, T / 2 + 0.08, 0xc7ccd0)
+  // _addBrushedDiscLines(group, R, T / 2 + 0.08, 0xc7ccd0)
 
   // 背面(下)垫圈纹路
-  _addGasketPattern(group, -T / 2, true)
+  // _addGasketPattern(group, -T / 2, true)
 
   // 背面黑色垫圈
 
@@ -442,10 +442,10 @@ function _makeCathodePlate(name, zPos) {
   disc.rotation.x = Math.PI / 2
   disc.castShadow = true
   group.add(disc)
-  _addBrushedDiscLines(group, R, -T / 2 - 0.08, 0xc7ccd0)
+  // _addBrushedDiscLines(group, R, -T / 2 - 0.08, 0xc7ccd0)
 
   // 正面(上)垫圈纹路
-  _addGasketPattern(group, +T / 2, true)
+  // _addGasketPattern(group, +T / 2, true)
 
   // 正面黑色垫圈
 
@@ -674,15 +674,19 @@ function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
     transparent: true,
     opacity: 0.82
   })
-  const reliefH = 0.075
+  const reliefH = 0.26
   const z = surfZ + side * (reliefH / 2 + 0.015)
 
-  const reliefShape = _makeWavySealShape(windowSize + 5.8, 3.9, 1.15, 128)
+  // Use mathematically precise realistic shape parameters: base = windowSize + 10.2, amp = 4.2, width = 3.2
+  const Pc = windowSize + 10.2 - 1.5 // 24.2
+  
+  // Call smooth polar coordinate wavy seal shape of constant width
+  const reliefShape = _makeWavySealShape(windowSize + 10.2, 4.2, 3.2, 128, false)
   const reliefGeo = new THREE.ExtrudeGeometry(reliefShape, {
     depth: reliefH,
     bevelEnabled: true,
-    bevelThickness: 0.015,
-    bevelSize: 0.035,
+    bevelThickness: 0.035,
+    bevelSize: 0.045,
     bevelSegments: 2
   })
   reliefGeo.translate(0, 0, -reliefH / 2)
@@ -690,15 +694,35 @@ function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
   relief.position.z = z
   parent.add(relief)
 
-  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-    const cx = Math.cos(a) * (windowSize + 5.8)
-    const cy = Math.sin(a) * (windowSize + 5.8)
+  // Add 4 parallel micro flow channel slots as visual cutouts per port
+  const slotLength = 8.2
+  const slotWidth = 0.48
+  const slotHeight = reliefH * 1.2 // 0.31
+  const slotMat = new THREE.MeshStandardMaterial({
+    color: 0xd0d0c8, // soft warm-grey shadow color representing a subtle carved depth
+    metalness: 0.05,
+    roughness: 0.5
+  })
+  const slotGeo = new THREE.BoxGeometry(slotLength, slotWidth, slotHeight)
 
-    const port = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, reliefH, 24), reliefMat)
-    port.rotation.x = Math.PI / 2
-    port.position.set(cx, cy, z + side * 0.006)
-    parent.add(port)
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const cos = Math.cos(a)
+    const sin = Math.sin(a)
+    const xMid = (13.5 + 21.7) / 2 // 17.6
+
+    for (const offset of [-1.5, -0.5, 0.5, 1.5]) {
+      const yOff = offset * 1.1
+      const px = xMid * cos - yOff * sin
+      const py = xMid * sin + yOff * cos
+
+      const slotMesh = new THREE.Mesh(slotGeo, slotMat)
+      slotMesh.position.set(px, py, z + side * 0.01)
+      slotMesh.rotation.z = a
+      parent.add(slotMesh)
+    }
   }
+
+
 }
 
 function _addGasketPattern(parent, surfZ, front) {
@@ -820,22 +844,13 @@ function _addPlateBlackGasket(parent, surfZ) {
 
   const mat = MaterialPresets.gasket()
 
+  // Call smooth polar coordinate wavy seal shape of constant width
   const shape = _makeWavySealShape(25, 5.6, 4.2, 128)
   const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.z = surfZ + side * (bgT / 2 + 0.22)
   parent.add(mesh)
-
-  const holeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.1, roughness: 0.85 })
-  const holeGeo = new THREE.CylinderGeometry(2.7, 2.7, bgT + 0.2, 18)
-  const holeR = 24
-  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-    const hole = new THREE.Mesh(holeGeo, holeMat)
-    hole.rotation.x = Math.PI / 2
-    hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, mesh.position.z + side * 0.05)
-    parent.add(hole)
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -918,27 +933,6 @@ function _makeExpandedMesh(name, zPos) {
     }
   }
 
-  // 斜向交叉线条
-  const diagMat = new THREE.MeshStandardMaterial({
-    color: 0x404040,
-    metalness: 0.9,
-    roughness: 0.3,
-    side: THREE.DoubleSide
-  })
-
-  for (let i = -size; i <= size; i += diamondSize * 1.5) {
-    const diagGeo = new THREE.BoxGeometry(Math.sqrt(2) * diamondSize * 0.5, 0.35, T + 0.1)
-    const diag1 = new THREE.Mesh(diagGeo, diagMat)
-    diag1.position.set(i + diamondSize * 0.3, 0, 0)
-    diag1.rotation.z = Math.PI / 4
-    group.add(diag1)
-
-    const diag2 = new THREE.Mesh(diagGeo.clone(), diagMat)
-    diag2.position.set(i - diamondSize * 0.3, 0, 0)
-    diag2.rotation.z = -Math.PI / 4
-    group.add(diag2)
-  }
-
   group.position.z = zPos
   return group
 }
@@ -946,30 +940,162 @@ function _makeExpandedMesh(name, zPos) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 四叶形O-ring
 // ─────────────────────────────────────────────────────────────────────────────
-function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 96) {
-  const outer = new THREE.Shape()
-  for (let i = 0; i <= steps; i++) {
-    const a = (i / steps) * Math.PI * 2
-    const r = radiusBase + radiusAmp * Math.cos(4 * a)
-    const x = Math.cos(a) * r
-    const y = Math.sin(a) * r
-    if (i === 0) outer.moveTo(x, y)
-    else outer.lineTo(x, y)
+function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, includeChannels = false) {
+  // Dynamically calculate control parameters for perfect geometry across all gasket layers
+  let R_port
+  if (Math.abs(radiusBase - 22) < 0.5) {
+    R_port = 20.5
+  } else if (Math.abs(radiusBase - 25) < 0.5) {
+    R_port = 24.0
+  } else {
+    R_port = radiusBase - 1.5 // 24.2
   }
-  outer.closePath()
 
-  const inner = new THREE.Path()
-  for (let i = 0; i <= steps; i++) {
-    const a = (i / steps) * Math.PI * 2
-    const r = radiusBase + radiusAmp * Math.cos(4 * a) - tubeWidth
-    const x = Math.cos(a) * r
-    const y = Math.sin(a) * r
-    if (i === 0) inner.moveTo(x, y)
-    else inner.lineTo(x, y)
+  // 1. Calculate matching W_in, W_out, and r_port_outer
+  let W_in
+  if (Math.abs(radiusBase - 25) < 0.5) {
+    W_in = 15.0 // For black gasket (fits the 30x30 recess perfectly)
+  } else {
+    W_in = radiusBase - 10.7 // For thin white gasket: windowSize + 10.2 - 10.7 = windowSize - 0.5 (approx 15.0)
   }
-  inner.closePath()
-  outer.holes.push(inner)
-  return outer
+  const W_out = W_in + tubeWidth
+  const r_port_outer = R_port - W_in + 0.8 // approx 5.0 to 6.0
+  const r_port_inner = r_port_outer - tubeWidth // concentric inner port loop radius
+  const R_corner = 3.5
+  const r_corner = 2.0
+
+  const L_straight = W_in - 6.0
+  const L_straight_in = L_straight
+  const L_corner = W_out - R_corner
+  const L_corner_in = W_in - r_corner
+
+  const shape = new THREE.Shape()
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // OUTER BOUNDARY (CCW Winding Order)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Start at right lobe top tip
+  shape.moveTo(R_port, r_port_outer)
+
+  // Top-Right Quadrant
+  shape.bezierCurveTo(R_port, r_port_outer + 1.5, W_out, L_straight - 1.5, W_out, L_straight)
+  shape.lineTo(W_out, L_corner)
+  shape.absarc(W_out - R_corner, W_out - R_corner, R_corner, 0, 0.5 * Math.PI, false)
+  shape.lineTo(L_straight, W_out)
+  shape.bezierCurveTo(L_straight - 1.5, W_out, r_port_outer + 1.5, R_port, r_port_outer, R_port)
+  shape.absarc(0, R_port, r_port_outer, 0, Math.PI, false)
+
+  // Top-Left Quadrant
+  shape.bezierCurveTo(-r_port_outer - 1.5, R_port, -L_straight + 1.5, W_out, -L_straight, W_out)
+  shape.lineTo(-W_out + R_corner, W_out)
+  shape.absarc(-W_out + R_corner, W_out - R_corner, R_corner, 0.5 * Math.PI, Math.PI, false)
+  shape.lineTo(-W_out, L_straight)
+  shape.bezierCurveTo(-W_out, L_straight - 1.5, -R_port, r_port_outer + 1.5, -R_port, r_port_outer)
+  shape.absarc(-R_port, 0, r_port_outer, 0.5 * Math.PI, 1.5 * Math.PI, false)
+
+  // Bottom-Left Quadrant
+  shape.bezierCurveTo(-R_port, -r_port_outer - 1.5, -W_out, -L_straight + 1.5, -W_out, -L_straight)
+  shape.lineTo(-W_out, -L_corner)
+  shape.absarc(-W_out + R_corner, -W_out + R_corner, R_corner, Math.PI, 1.5 * Math.PI, false)
+  shape.lineTo(-L_straight, -W_out)
+  shape.bezierCurveTo(-L_straight + 1.5, -W_out, -r_port_outer - 1.5, -R_port, -r_port_outer, -R_port)
+  shape.absarc(0, -R_port, r_port_outer, Math.PI, 2 * Math.PI, false)
+
+  // Bottom-Right Quadrant
+  shape.bezierCurveTo(r_port_outer + 1.5, -R_port, L_straight - 1.5, -W_out, L_straight, -W_out)
+  shape.lineTo(W_out - R_corner, -W_out)
+  shape.absarc(W_out - R_corner, -W_out + R_corner, R_corner, 1.5 * Math.PI, 2 * Math.PI, false)
+  shape.lineTo(W_out, -L_straight)
+  shape.bezierCurveTo(W_out, -L_straight + 1.5, R_port, -r_port_outer - 1.5, R_port, -r_port_outer)
+  shape.absarc(R_port, 0, r_port_outer, 1.5 * Math.PI, 2.5 * Math.PI, false)
+  shape.closePath()
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // INNER BOUNDARY (CW Winding Order - concentrically matching outer boundary)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const innerPath = new THREE.Path()
+  // Start at top port right tip
+  innerPath.moveTo(r_port_inner, R_port)
+
+  // Top-Right Quadrant
+  innerPath.bezierCurveTo(r_port_inner + 1.5, R_port, L_straight_in - 1.5, W_in, L_straight_in, W_in)
+  innerPath.lineTo(W_in - r_corner, W_in)
+  innerPath.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
+  innerPath.lineTo(W_in, L_straight_in)
+  innerPath.bezierCurveTo(W_in, L_straight_in - 1.5, R_port, r_port_inner + 1.5, R_port, r_port_inner)
+  innerPath.absarc(R_port, 0, r_port_inner, 0.5 * Math.PI, -0.5 * Math.PI, true)
+
+  // Bottom-Right Quadrant
+  innerPath.bezierCurveTo(R_port, -r_port_inner - 1.5, W_in, -L_straight_in + 1.5, W_in, -L_straight_in)
+  innerPath.lineTo(W_in, -W_in + r_corner)
+  innerPath.absarc(W_in - r_corner, -W_in + r_corner, r_corner, 0, -0.5 * Math.PI, true)
+  innerPath.lineTo(L_straight_in, -W_in)
+  innerPath.bezierCurveTo(L_straight_in - 1.5, -W_in, r_port_inner + 1.5, -R_port, r_port_inner, -R_port)
+  innerPath.absarc(0, -R_port, r_port_inner, 0, -Math.PI, true)
+
+  // Bottom-Left Quadrant
+  innerPath.bezierCurveTo(-r_port_inner - 1.5, -R_port, -L_straight_in + 1.5, -W_in, -L_straight_in, -W_in)
+  innerPath.lineTo(-W_in + r_corner, -W_in)
+  innerPath.absarc(-W_in + r_corner, -W_in + r_corner, r_corner, -0.5 * Math.PI, -Math.PI, true)
+  innerPath.lineTo(-W_in, -L_straight_in)
+  innerPath.bezierCurveTo(-W_in, -L_straight_in - 1.5, -R_port, -r_port_inner + 1.5, -R_port, -r_port_inner)
+  innerPath.absarc(-R_port, 0, r_port_inner, -0.5 * Math.PI, -1.5 * Math.PI, true)
+
+  // Top-Left Quadrant
+  innerPath.bezierCurveTo(-R_port, r_port_inner + 1.5, -W_in, L_straight_in - 1.5, -W_in, L_straight_in)
+  innerPath.lineTo(-W_in, W_in - r_corner)
+  innerPath.absarc(-W_in + r_corner, W_in - r_corner, r_corner, -Math.PI, -1.5 * Math.PI, true)
+  innerPath.lineTo(-L_straight_in, W_in)
+  innerPath.bezierCurveTo(-L_straight_in + 1.5, W_in, -r_port_inner - 1.5, R_port, -r_port_inner, R_port)
+  innerPath.absarc(0, R_port, r_port_inner, Math.PI, 0, true)
+
+  innerPath.closePath()
+  shape.holes.push(innerPath)
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // INTEGRATED MICRO FLOW CHANNEL RECTANGULAR SLOTS (CW Winding Order)
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (includeChannels) {
+    const channelW = 0.45
+    const channelSpacing = 1.1
+    const xStart = W_in - 1.5 // Start channels slightly inside the inner boundary to connect!
+    const xEnd = R_port - 2.5 // End before the port hole boundary!
+
+    for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+      const cos = Math.cos(a)
+      const sin = Math.sin(a)
+
+      for (const offset of [-1.5, -0.5, 0.5, 1.5]) {
+        const yCenter = offset * channelSpacing
+        const yStart = yCenter - channelW / 2
+        const yEnd = yCenter + channelW / 2
+
+        // CW Winding Order: p1 -> p2 -> p3 -> p4
+        const p1x = xStart * cos - yStart * sin
+        const p1y = xStart * sin + yStart * cos
+        
+        const p2x = xEnd * cos - yStart * sin
+        const p2y = xEnd * sin + yStart * cos
+        
+        const p3x = xEnd * cos - yEnd * sin
+        const p3y = xEnd * sin + yEnd * cos
+        
+        const p4x = xStart * cos - yEnd * sin
+        const p4y = xStart * sin + yEnd * cos
+
+        const channelPath = new THREE.Path()
+        channelPath.moveTo(p1x, p1y)
+        channelPath.lineTo(p2x, p2y)
+        channelPath.lineTo(p3x, p3y)
+        channelPath.lineTo(p4x, p4y)
+        channelPath.closePath()
+
+        shape.holes.push(channelPath)
+      }
+    }
+  }
+
+  return shape
 }
 
 function _addPhotoCloverSealAt(parent, surfZ) {
