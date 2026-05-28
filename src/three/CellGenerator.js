@@ -1031,13 +1031,11 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   innerPath.bezierCurveTo(r_port_inner, R_port - offset_port_in, L_straight_in - offset_straight_in, W_in, L_straight_in, W_in)
   innerPath.lineTo(W_in - r_corner, W_in)
   innerPath.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
-  innerPath.lineTo(W_in, L_straight_in)
-  innerPath.bezierCurveTo(W_in, L_straight_in - offset_straight_in, R_port - offset_port_in, r_port_inner, R_port, r_port_inner)
-  innerPath.absarc(R_port, 0, r_port_inner, 0.5 * Math.PI, -0.5 * Math.PI, true)
+
+  // Go straight down to the bottom-right corner, closing off the right port loop
+  innerPath.lineTo(W_in, -L_corner_in)
 
   // Bottom-Right Quadrant
-  innerPath.bezierCurveTo(R_port - offset_port_in, -r_port_inner, W_in, -L_straight_in + offset_straight_in, W_in, -L_straight_in)
-  innerPath.lineTo(W_in, -W_in + r_corner)
   innerPath.absarc(W_in - r_corner, -W_in + r_corner, r_corner, 0, -0.5 * Math.PI, true)
   innerPath.lineTo(L_straight_in, -W_in)
   innerPath.bezierCurveTo(L_straight_in - offset_straight_in, -W_in, r_port_inner, -R_port + offset_port_in, r_port_inner, -R_port)
@@ -1047,13 +1045,11 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   innerPath.bezierCurveTo(-r_port_inner, -R_port + offset_port_in, -L_straight_in + offset_straight_in, -W_in, -L_straight_in, -W_in)
   innerPath.lineTo(-W_in + r_corner, -W_in)
   innerPath.absarc(-W_in + r_corner, -W_in + r_corner, r_corner, -0.5 * Math.PI, -Math.PI, true)
-  innerPath.lineTo(-W_in, -L_straight_in)
-  innerPath.bezierCurveTo(-W_in, -L_straight_in + offset_straight_in, -R_port + offset_port_in, -r_port_inner, -R_port, -r_port_inner)
-  innerPath.absarc(-R_port, 0, r_port_inner, -0.5 * Math.PI, -1.5 * Math.PI, true)
+
+  // Go straight up to the top-left corner, closing off the left port loop
+  innerPath.lineTo(-W_in, L_corner_in)
 
   // Top-Left Quadrant
-  innerPath.bezierCurveTo(-R_port + offset_port_in, r_port_inner, -W_in, L_straight_in - offset_straight_in, -W_in, L_straight_in)
-  innerPath.lineTo(-W_in, W_in - r_corner)
   innerPath.absarc(-W_in + r_corner, W_in - r_corner, r_corner, -Math.PI, -1.5 * Math.PI, true)
   innerPath.lineTo(-L_straight_in, W_in)
   innerPath.bezierCurveTo(-L_straight_in + offset_straight_in, W_in, -r_port_inner, R_port - offset_port_in, -r_port_inner, R_port)
@@ -1061,6 +1057,15 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
 
   innerPath.closePath()
   shape.holes.push(innerPath)
+
+  // Add separate circular port holes for the left and right ears to match the closed real design
+  const rightPortHole = new THREE.Path()
+  rightPortHole.absarc(R_port, 0, r_port_inner, 0, Math.PI * 2, true)
+  shape.holes.push(rightPortHole)
+
+  const leftPortHole = new THREE.Path()
+  leftPortHole.absarc(-R_port, 0, r_port_inner, 0, Math.PI * 2, true)
+  shape.holes.push(leftPortHole)
 
   // ─────────────────────────────────────────────────────────────────────────────
   // INTEGRATED MICRO FLOW CHANNEL RECTANGULAR SLOTS (CW Winding Order)
