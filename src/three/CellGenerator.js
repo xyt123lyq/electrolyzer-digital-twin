@@ -243,6 +243,31 @@ function _makeSingleEarCoverShape(radius, earExtend, earHalfH) {
   return shape
 }
 
+function _makePhotoCoverShape(radius, earExtend, earHalfH) {
+  const shape = new THREE.Shape()
+  const ex = radius + earExtend
+  const ey = earHalfH
+  const joinA = Math.asin(ey / radius)
+  const xJoin = Math.cos(joinA) * radius
+  const cornerR = Math.min(6, earHalfH * 0.7)
+
+  shape.moveTo(xJoin, -ey)
+  shape.lineTo(ex - cornerR, -ey)
+  shape.quadraticCurveTo(ex, -ey, ex, -ey + cornerR)
+  shape.lineTo(ex, ey - cornerR)
+  shape.quadraticCurveTo(ex, ey, ex - cornerR, ey)
+  shape.lineTo(xJoin, ey)
+  shape.absarc(0, 0, radius, joinA, Math.PI - joinA, false)
+  shape.lineTo(-ex + cornerR, ey)
+  shape.quadraticCurveTo(-ex, ey, -ex, ey - cornerR)
+  shape.lineTo(-ex, -ey + cornerR)
+  shape.quadraticCurveTo(-ex, -ey, -ex + cornerR, -ey)
+  shape.lineTo(-xJoin, -ey)
+  shape.absarc(0, 0, radius, Math.PI + joinA, Math.PI * 2 - joinA, false)
+  shape.closePath()
+  return shape
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 粉色端盖板（带侧耳圆形）
 // ─────────────────────────────────────────────────────────────────────────────
@@ -259,23 +284,30 @@ function _makePinkCover(name, isTop, zPos) {
 
   const mat = MaterialPresets.endplate()
 
-  const shape = _makeSingleEarCoverShape(radius, earExtend, earWidthY)
+  const shape = _makePhotoCoverShape(radius, earExtend, earWidthY)
   const geo = new THREE.ExtrudeGeometry(shape, {
     depth: T,
-    bevelEnabled: false
+    bevelEnabled: true,
+    bevelThickness: 0.45,
+    bevelSize: 0.75,
+    bevelSegments: 3,
+    curveSegments: 64
   })
   geo.translate(0, 0, -T / 2)
 
   const body = new THREE.Mesh(geo, mat)
   body.castShadow = true
+  body.receiveShadow = true
   group.add(body)
 
   _addBoltHoles(group, T, 8)
-  // _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
+  _addCoverHoleChamfers(group, T / 2, 8)
+  _addCoverHoleChamfers(group, -T / 2, 8)
+  _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
 
   if (isTop) {
     _addGasPorts(group, T / 2)
-    _addHexSocketPlug(group, 0, -17, T / 2 + 1.8)
+    _addHexSocketPlug(group, 0, -22, T / 2 + 1.8)
   }
 
   group.position.z = zPos
@@ -379,7 +411,7 @@ function _addBlackGasketOnPattern(parent, zPos) {
   hole.quadraticCurveTo(-holeW / 2, -holeH / 2, -holeW / 2 + holeRadius, -holeH / 2)
   shape.holes.push(hole)
 
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false })
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false, curveSegments: 64 })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.z = zPos - bgT / 2
@@ -473,7 +505,7 @@ function _makeAnodePlate(name, zPos) {
 
   // Base backing plate (thickness 2.65 mm)
   const backingShape = _makeBackingPlateShape(R)
-  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
+  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
   backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
   const backingMesh = new THREE.Mesh(backingGeo, mat)
   backingMesh.castShadow = true
@@ -482,7 +514,7 @@ function _makeAnodePlate(name, zPos) {
 
   // Face plate (thickness 0.35 mm) with cutouts
   const faceShape = _makeFacePlateShape(R)
-  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false })
+  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
   faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
   const faceMesh = new THREE.Mesh(faceGeo, mat)
   faceMesh.castShadow = true
@@ -516,7 +548,7 @@ function _makeCathodePlate(name, zPos) {
 
   // Base backing plate (thickness 2.65 mm)
   const backingShape = _makeBackingPlateShape(R)
-  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false })
+  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
   backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
   const backingMesh = new THREE.Mesh(backingGeo, mat)
   backingMesh.castShadow = true
@@ -525,7 +557,7 @@ function _makeCathodePlate(name, zPos) {
 
   // Face plate (thickness 0.35 mm) with cutouts
   const faceShape = _makeFacePlateShape(R)
-  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false })
+  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
   faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
   const faceMesh = new THREE.Mesh(faceGeo, mat)
   faceMesh.castShadow = true
@@ -865,6 +897,8 @@ function _addFlowChannelGroove(parent, surfZ) {
   }
 
   const portR = 24.0 // Align perfectly with R_port of wavy gaskets (24.0)
+  _addPortStartedArcGrooves(parent, 1, portR, grooveSize, grooveFaceZ, side)
+  _addPortStartedArcGrooves(parent, -1, portR, grooveSize, grooveFaceZ, side)
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const px = Math.cos(a) * portR
     const py = Math.sin(a) * portR
@@ -877,8 +911,8 @@ function _addFlowChannelGroove(parent, surfZ) {
     if (a === 0 || a === Math.PI) {
       for (let i = -2; i <= 2; i++) { // 5 horizontal slots!
         const step = Math.abs(i)
-        const branchLen = 9.5 - step * 2.0 // Stepped length: 9.5, 7.5, 5.5
-        const branchX = 19.5 - step * 1.0  // Stepped center so all start at x = 14.75
+        const branchLen = 10.1 - step * 1.9 // starts at the side port and steps toward the active area
+        const branchX = 19.25 - step * 0.95
 
         const branch = new THREE.Mesh(new THREE.BoxGeometry(branchLen, 0.28, 0.10), channelMat)
         branch.position.set(branchX * Math.cos(a), i * 1.15, grooveFaceZ + side * 0.05)
@@ -889,6 +923,27 @@ function _addFlowChannelGroove(parent, surfZ) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+function _addPortStartedArcGrooves(parent, dir, portR, grooveSize, grooveFaceZ, side) {
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x3e464a,
+    metalness: 0.68,
+    roughness: 0.48
+  })
+  const activeEdgeX = dir * (grooveSize / 2 + 0.55)
+  const portEdgeX = dir * (portR - 2.15)
+  const z = grooveFaceZ + side * 0.105
+
+  for (const sgn of [1, -1]) {
+    const curve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(portEdgeX, sgn * 2.15, z),
+      new THREE.Vector3(dir * (portR - 4.7), sgn * 13.8, z),
+      new THREE.Vector3(activeEdgeX, sgn * (grooveSize / 2 + 0.2), z)
+    )
+    const groove = new THREE.Mesh(new THREE.TubeGeometry(curve, 42, 0.16, 8, false), mat)
+    parent.add(groove)
+  }
+}
+
 function _addPlateBlackGasket(parent, surfZ) {
   const c = CELL_CONFIG
   const side = surfZ >= 0 ? 1 : -1
@@ -897,7 +952,7 @@ function _addPlateBlackGasket(parent, surfZ) {
   const mat = MaterialPresets.gasket()
 
   const shape = _makeWavySealShape(25, 5.6, 4.2, 128)
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false })
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false, curveSegments: 64 })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.z = surfZ + side * (bgT / 2 + 0.22)
@@ -993,6 +1048,8 @@ function _makeExpandedMesh(name, zPos) {
 // 四叶形O-ring
 // ─────────────────────────────────────────────────────────────────────────────
 function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, includeChannels = false) {
+  const usePhotoArc = Math.abs(radiusBase - 25) < 0.5
+
   // Dynamically calculate control parameters for perfect geometry across all gasket layers
   let R_port
   if (Math.abs(radiusBase - 22) < 0.5) {
@@ -1005,16 +1062,16 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
 
   // 1. Calculate matching W_in, W_out, and r_port_outer
   let W_in
-  if (Math.abs(radiusBase - 25) < 0.5) {
-    W_in = 15.0 // For black gasket (fits the 30x30 recess perfectly)
+  if (usePhotoArc) {
+    W_in = 14.1 // Wider curved shoulders around the active area, matching the red reference arcs.
   } else {
     W_in = radiusBase - 10.7 // For thin white gasket: windowSize + 10.2 - 10.7 = windowSize - 0.5 (approx 15.0)
   }
   const W_out = W_in + tubeWidth
   const r_port_outer = R_port - W_in + 0.8 // approx 5.0 to 6.0
   const r_port_inner = r_port_outer - tubeWidth // concentric inner port loop radius
-  const R_corner = 3.5
-  const r_corner = 2.0
+  const R_corner = usePhotoArc ? 6.2 : 3.5
+  const r_corner = usePhotoArc ? 5.4 : 2.0
 
   const L_corner = W_out - R_corner
   const L_corner_in = W_in - r_corner
@@ -1024,7 +1081,7 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   const L_straight = (r_port_outer + L_corner) / 2
   const L_straight_in = (r_port_inner + L_corner_in) / 2
 
-  const tension = 0.45
+  const tension = usePhotoArc ? 0.72 : 0.45
   const offset_port = tension * (R_port - W_out)
   const offset_straight = tension * (L_straight - r_port_outer)
 
@@ -1241,6 +1298,43 @@ function _addBoltHoles(parent, thickness, count) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 极板螺栓孔
 // ─────────────────────────────────────────────────────────────────────────────
+function _addCoverHoleChamfers(parent, surfZ, count) {
+  const c = CELL_CONFIG
+  const side = surfZ >= 0 ? 1 : -1
+  const pcdR = c.bolt.pcd / 2
+  const boreR = c.bolt.diameter / 2
+  const ringMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb8bec3,
+    metalness: 0.88,
+    roughness: 0.24,
+    envMapIntensity: 1.5,
+    clearcoat: 0.25,
+    clearcoatRoughness: 0.2
+  })
+  const stainMat = new THREE.MeshBasicMaterial({
+    color: 0x2d3336,
+    transparent: true,
+    opacity: 0.24,
+    depthWrite: false
+  })
+  const ringGeo = new THREE.TorusGeometry(boreR + 1.35, 0.28, 8, 28)
+  const stainGeo = new THREE.TorusGeometry(boreR + 2.05, 0.18, 6, 30)
+
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2 + Math.PI / count
+    const x = Math.cos(angle) * pcdR
+    const y = Math.sin(angle) * pcdR
+
+    const ring = new THREE.Mesh(ringGeo, ringMat)
+    ring.position.set(x, y, surfZ + side * 0.16)
+    parent.add(ring)
+
+    const stain = new THREE.Mesh(stainGeo, stainMat)
+    stain.position.set(x, y, surfZ + side * 0.18)
+    parent.add(stain)
+  }
+}
+
 function _addPlateBoltHoles(parent, plateT) {
   const c = CELL_CONFIG
   const pcdR = c.bolt.pcd / 2
@@ -1325,8 +1419,8 @@ function _addGasPorts(parent, portFaceZ) {
   // 6 o'clock is a hex socket plug.
   const fittings = [
     { x: 0, y: 24 },      // 12 o'clock
-    { x: 20, y: 9 },      // 2 o'clock
-    { x: -20, y: 9 },     // 10 o'clock
+    { x: 22, y: -8 },     // lower right
+    { x: -22, y: -8 },    // lower left
   ]
 
   for (const p of fittings) {

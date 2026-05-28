@@ -5,21 +5,24 @@ const path = require('path');
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1200, height: 1200 } });
 
-  // Try primary dev server port, fall back to default Vite port if needed
-  const ports = ['5183', '5173'];
+  // Prefer the current Vite default port, but keep the older fallback for
+  // workspaces where Vite has already auto-selected another port.
+  const urls = process.env.DEV_SERVER_URL
+    ? [process.env.DEV_SERVER_URL]
+    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5183'];
   let navigated = false;
-  for (const p of ports) {
+  for (const url of urls) {
     try {
-      console.log(`Navigating to http://localhost:${p} ...`);
-      await page.goto(`http://localhost:${p}`, { waitUntil: 'networkidle', timeout: 60000 });
+      console.log(`Navigating to ${url} ...`);
+      await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
       navigated = true;
       break;
     } catch (e) {
-      console.warn(`Failed to load on port ${p}: ${e.message}`);
+      console.warn(`Failed to load ${url}: ${e.message}`);
     }
   }
   if (!navigated) {
-    console.error('Unable to reach dev server on any known port. Exiting.');
+    console.error('Unable to reach dev server on any known URL. Exiting.');
     await browser.close();
     process.exit(1);
   }
@@ -30,26 +33,34 @@ const path = require('path');
   // Wait for the global __scene__ object; give extra time for Vue mount
   await page.waitForFunction(() => typeof window.__scene__ !== 'undefined', { timeout: 120000 });
 
-  console.log('Configuring Three.js camera for close-up top-down view...');
+  console.log('Isolating cathode plate gasket/flow-channel details...');
   await page.evaluate(async () => {
     const scene = window.__scene__;
     if (!scene) return;
     scene.stopAutoDemo?.();
     scene.resetAll?.();
-    
-    // Trigger exploded view if method exists
-    scene.triggerExplode?.();
-    
+
+    // The exploded stack's top cover blocks the gasket in a top-down close-up.
+    // For inspection, show the cathode plate only: black gasket, flow-channel
+    // recess, mesh, bolt holes and lug hole remain visible in one frame.
+    scene.cell?.children?.forEach(child => {
+      child.visible = child.name === 'cathodePlate';
+    });
+
+    if (scene.cellAssembly) {
+      scene.cellAssembly.rotation.y = 0;
+    }
+
     // Set camera for top-down view
-    scene.camera.position.set(0, 140, 0);
+    scene.camera.position.set(0, 68, 0);
     scene.controls.target.set(0, 0, 0);
     scene.camera.up.set(0, 0, -1);
     scene.controls.update?.();
     scene.requestRender?.();
   });
 
-  console.log('Waiting 4.5 seconds for explosion animation to settle...');
-  await page.waitForTimeout(4500);
+  console.log('Waiting for render to settle...');
+  await page.waitForTimeout(1200);
 
   // Ensure a final render
   await page.evaluate(() => {
