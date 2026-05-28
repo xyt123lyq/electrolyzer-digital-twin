@@ -681,7 +681,7 @@ function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
   const Pc = windowSize + 10.2 - 1.5 // 24.2
   
   // Call smooth polar coordinate wavy seal shape of constant width
-  const reliefShape = _makeWavySealShape(windowSize + 10.2, 4.2, 3.2, 128, false)
+  const reliefShape = _makeWavySealShape(windowSize + 10.2, 4.2, 3.2, 128, true)
   const reliefGeo = new THREE.ExtrudeGeometry(reliefShape, {
     depth: reliefH,
     bevelEnabled: true,
@@ -693,36 +693,6 @@ function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
   const relief = new THREE.Mesh(reliefGeo, reliefMat)
   relief.position.z = z
   parent.add(relief)
-
-  // Add 4 parallel micro flow channel slots as visual cutouts per port
-  const slotLength = 8.2
-  const slotWidth = 0.48
-  const slotHeight = reliefH * 1.2 // 0.31
-  const slotMat = new THREE.MeshStandardMaterial({
-    color: 0xd0d0c8, // soft warm-grey shadow color representing a subtle carved depth
-    metalness: 0.05,
-    roughness: 0.5
-  })
-  const slotGeo = new THREE.BoxGeometry(slotLength, slotWidth, slotHeight)
-
-  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-    const cos = Math.cos(a)
-    const sin = Math.sin(a)
-    const xMid = (13.5 + 21.7) / 2 // 17.6
-
-    for (const offset of [-1.5, -0.5, 0.5, 1.5]) {
-      const yOff = offset * 1.1
-      const px = xMid * cos - yOff * sin
-      const py = xMid * sin + yOff * cos
-
-      const slotMesh = new THREE.Mesh(slotGeo, slotMat)
-      slotMesh.position.set(px, py, z + side * 0.01)
-      slotMesh.rotation.z = a
-      parent.add(slotMesh)
-    }
-  }
-
-
 }
 
 function _addGasketPattern(parent, surfZ, front) {
@@ -825,11 +795,13 @@ function _addFlowChannelGroove(parent, surfZ) {
     port.position.set(px, py, grooveFaceZ + side * 0.05)
     parent.add(port)
 
-    for (let i = -1; i <= 1; i++) {
-      const branch = new THREE.Mesh(new THREE.BoxGeometry(0.28, 9.5, 0.10), channelMat)
-      branch.position.set(px * 0.66 + i * 0.85 * Math.sin(a), py * 0.66 - i * 0.85 * Math.cos(a), grooveFaceZ + side * 0.035)
-      branch.rotation.z = a
-      parent.add(branch)
+    // Flow channel branches ONLY on left (Math.PI) and right (0) ports!
+    if (a === 0 || a === Math.PI) {
+      for (let i = -2; i <= 2; i++) { // 5 horizontal slots!
+        const branch = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.28, 0.10), channelMat) // Width along x is 9.5, height along y is 0.28!
+        branch.position.set(px * 0.66, py * 0.66 + i * 0.85, grooveFaceZ + side * 0.035)
+        parent.add(branch)
+      }
     }
   }
 }
@@ -844,8 +816,7 @@ function _addPlateBlackGasket(parent, surfZ) {
 
   const mat = MaterialPresets.gasket()
 
-  // Call smooth polar coordinate wavy seal shape of constant width
-  const shape = _makeWavySealShape(25, 5.6, 4.2, 128)
+  const shape = _makeWavySealShape(25, 5.6, 4.2, 128, true)
   const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
@@ -1056,7 +1027,7 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   innerPath.absarc(0, R_port, r_port_inner, Math.PI, 0, true)
 
   innerPath.closePath()
-  shape.holes.push(innerPath)
+  shape.push ? null : shape.holes.push(innerPath)
 
   // Add separate circular port holes for the left and right ears to match the closed real design
   const rightPortHole = new THREE.Path()
@@ -1076,11 +1047,13 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
     const xStart = W_in - 1.5 // Start channels slightly inside the inner boundary to connect!
     const xEnd = R_port - 2.5 // End before the port hole boundary!
 
-    for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    // Only on LEFT (Math.PI) and RIGHT (0) ports!
+    for (const a of [0, Math.PI]) {
       const cos = Math.cos(a)
       const sin = Math.sin(a)
 
-      for (const offset of [-1.5, -0.5, 0.5, 1.5]) {
+      // 5 parallel channels!
+      for (const offset of [-2, -1, 0, 1, 2]) {
         const yCenter = offset * channelSpacing
         const yStart = yCenter - channelW / 2
         const yEnd = yCenter + channelW / 2
