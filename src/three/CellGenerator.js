@@ -681,7 +681,7 @@ function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
   const Pc = windowSize + 10.2 - 1.5 // 24.2
   
   // Call smooth polar coordinate wavy seal shape of constant width
-  const reliefShape = _makeWavySealShape(windowSize + 10.2, 4.2, 3.2, 128, true)
+  const reliefShape = _makeWavySealShape(windowSize + 10.2, 4.2, 3.2, 128, false)
   const reliefGeo = new THREE.ExtrudeGeometry(reliefShape, {
     depth: reliefH,
     bevelEnabled: true,
@@ -693,6 +693,30 @@ function _addThinWhiteWindowPattern(parent, windowSize, surfZ) {
   const relief = new THREE.Mesh(reliefGeo, reliefMat)
   relief.position.z = z
   parent.add(relief)
+
+  // Add 5 horizontal parallel slots on left and right ports to simulate the Teflon slots!
+  const slotLength = 9.5
+  const slotWidth = 0.5
+  const slotHeight = reliefH * 1.2
+  const slotMat = new THREE.MeshStandardMaterial({
+    color: 0x9c9a90, // Elegant darker warm grey to simulate shadow/slot depth
+    metalness: 0.1,
+    roughness: 0.6
+  })
+  const slotGeo = new THREE.BoxGeometry(slotLength, slotWidth, slotHeight)
+
+  for (const a of [0, Math.PI]) {
+    const cos = Math.cos(a)
+    const xMid = 19.5
+
+    for (let i = -2; i <= 2; i++) {
+      const px = xMid * cos
+      const py = i * 1.15
+      const slotMesh = new THREE.Mesh(slotGeo, slotMat)
+      slotMesh.position.set(px, py, z + side * 0.01)
+      parent.add(slotMesh)
+    }
+  }
 }
 
 function _addGasketPattern(parent, surfZ, front) {
@@ -786,7 +810,7 @@ function _addFlowChannelGroove(parent, surfZ) {
     parent.add(lane)
   }
 
-  const portR = grooveSize / 2 + 6.5
+  const portR = 24.0 // Align perfectly with R_port of wavy gaskets (24.0)
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const px = Math.cos(a) * portR
     const py = Math.sin(a) * portR
@@ -799,15 +823,13 @@ function _addFlowChannelGroove(parent, surfZ) {
     if (a === 0 || a === Math.PI) {
       for (let i = -2; i <= 2; i++) { // 5 horizontal slots!
         const branch = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.28, 0.10), channelMat) // Width along x is 9.5, height along y is 0.28!
-        branch.position.set(px * 0.66, py * 0.66 + i * 0.85, grooveFaceZ + side * 0.035)
+        branch.position.set(19.5 * Math.cos(a), i * 1.15, grooveFaceZ + side * 0.035)
         parent.add(branch)
       }
     }
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 极板上的黑色垫圈
 // ─────────────────────────────────────────────────────────────────────────────
 function _addPlateBlackGasket(parent, surfZ) {
   const c = CELL_CONFIG
@@ -816,14 +838,33 @@ function _addPlateBlackGasket(parent, surfZ) {
 
   const mat = MaterialPresets.gasket()
 
-  const shape = _makeWavySealShape(25, 5.6, 4.2, 128, true)
+  const shape = _makeWavySealShape(25, 5.6, 4.2, 128)
   const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.z = surfZ + side * (bgT / 2 + 0.22)
   parent.add(mesh)
-}
 
+  // Add 5 horizontal parallel slots on left and right ports to expose the plate silver channels underneath!
+  const slotLength = 9.5
+  const slotWidth = 0.5
+  const slotHeight = 0.04
+  const slotMat = MaterialPresets.conductive()
+  const slotGeo = new THREE.BoxGeometry(slotLength, slotWidth, slotHeight)
+
+  for (const a of [0, Math.PI]) {
+    const cos = Math.cos(a)
+    const xMid = 19.5
+
+    for (let i = -2; i <= 2; i++) {
+      const px = xMid * cos
+      const py = i * 1.15
+      const slotMesh = new THREE.Mesh(slotGeo, slotMat)
+      slotMesh.position.set(px, py, mesh.position.z + side * (bgT / 2 + 0.01))
+      parent.add(slotMesh)
+    }
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // 质子膜
 // ─────────────────────────────────────────────────────────────────────────────
@@ -941,14 +982,10 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   // To guarantee perfectly monotonic S-curves without any overshoot:
   // L_straight must be strictly between r_port_outer and L_corner
   const L_straight = (r_port_outer + L_corner) / 2
-  const L_straight_in = (r_port_inner + L_corner_in) / 2
 
   const tension = 0.45
   const offset_port = tension * (R_port - W_out)
   const offset_straight = tension * (L_straight - r_port_outer)
-  
-  const offset_port_in = tension * (R_port - W_in)
-  const offset_straight_in = tension * (L_straight_in - r_port_inner)
 
   const shape = new THREE.Shape()
 
@@ -992,95 +1029,30 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   shape.closePath()
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // INNER BOUNDARY (CW Winding Order - concentrically matching outer boundary)
+  // INNER BOUNDARY: Rounded square central window hole (CW Winding Order)
   // ─────────────────────────────────────────────────────────────────────────────
   const innerPath = new THREE.Path()
-  // Start at top port right tip
-  innerPath.moveTo(r_port_inner, R_port)
-
-  // Top-Right Quadrant
-  innerPath.bezierCurveTo(r_port_inner, R_port - offset_port_in, L_straight_in - offset_straight_in, W_in, L_straight_in, W_in)
+  innerPath.moveTo(-W_in + r_corner, W_in)
   innerPath.lineTo(W_in - r_corner, W_in)
   innerPath.absarc(W_in - r_corner, W_in - r_corner, r_corner, 0.5 * Math.PI, 0, true)
-
-  // Go straight down to the bottom-right corner, closing off the right port loop
-  innerPath.lineTo(W_in, -L_corner_in)
-
-  // Bottom-Right Quadrant
+  innerPath.lineTo(W_in, -W_in + r_corner)
   innerPath.absarc(W_in - r_corner, -W_in + r_corner, r_corner, 0, -0.5 * Math.PI, true)
-  innerPath.lineTo(L_straight_in, -W_in)
-  innerPath.bezierCurveTo(L_straight_in - offset_straight_in, -W_in, r_port_inner, -R_port + offset_port_in, r_port_inner, -R_port)
-  innerPath.absarc(0, -R_port, r_port_inner, 0, -Math.PI, true)
-
-  // Bottom-Left Quadrant
-  innerPath.bezierCurveTo(-r_port_inner, -R_port + offset_port_in, -L_straight_in + offset_straight_in, -W_in, -L_straight_in, -W_in)
   innerPath.lineTo(-W_in + r_corner, -W_in)
   innerPath.absarc(-W_in + r_corner, -W_in + r_corner, r_corner, -0.5 * Math.PI, -Math.PI, true)
-
-  // Go straight up to the top-left corner, closing off the left port loop
-  innerPath.lineTo(-W_in, L_corner_in)
-
-  // Top-Left Quadrant
-  innerPath.absarc(-W_in + r_corner, W_in - r_corner, r_corner, -Math.PI, -1.5 * Math.PI, true)
-  innerPath.lineTo(-L_straight_in, W_in)
-  innerPath.bezierCurveTo(-L_straight_in + offset_straight_in, W_in, -r_port_inner, R_port - offset_port_in, -r_port_inner, R_port)
-  innerPath.absarc(0, R_port, r_port_inner, Math.PI, 0, true)
-
+  innerPath.lineTo(-W_in, W_in - r_corner)
+  innerPath.absarc(-W_in + r_corner, W_in - r_corner, r_corner, Math.PI, 0.5 * Math.PI, true)
   innerPath.closePath()
-  shape.push ? null : shape.holes.push(innerPath)
-
-  // Add separate circular port holes for the left and right ears to match the closed real design
-  const rightPortHole = new THREE.Path()
-  rightPortHole.absarc(R_port, 0, r_port_inner, 0, Math.PI * 2, true)
-  shape.holes.push(rightPortHole)
-
-  const leftPortHole = new THREE.Path()
-  leftPortHole.absarc(-R_port, 0, r_port_inner, 0, Math.PI * 2, true)
-  shape.holes.push(leftPortHole)
+  shape.holes.push(innerPath)
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // INTEGRATED MICRO FLOW CHANNEL RECTANGULAR SLOTS (CW Winding Order)
+  // 4 SEPARATE CIRCULAR PORT HOLES (CW Winding Order)
   // ─────────────────────────────────────────────────────────────────────────────
-  if (includeChannels) {
-    const channelW = 0.45
-    const channelSpacing = 1.1
-    const xStart = W_in - 1.5 // Start channels slightly inside the inner boundary to connect!
-    const xEnd = R_port - 2.5 // End before the port hole boundary!
-
-    // Only on LEFT (Math.PI) and RIGHT (0) ports!
-    for (const a of [0, Math.PI]) {
-      const cos = Math.cos(a)
-      const sin = Math.sin(a)
-
-      // 5 parallel channels!
-      for (const offset of [-2, -1, 0, 1, 2]) {
-        const yCenter = offset * channelSpacing
-        const yStart = yCenter - channelW / 2
-        const yEnd = yCenter + channelW / 2
-
-        // CW Winding Order: p1 -> p2 -> p3 -> p4
-        const p1x = xStart * cos - yStart * sin
-        const p1y = xStart * sin + yStart * cos
-        
-        const p2x = xEnd * cos - yStart * sin
-        const p2y = xEnd * sin + yStart * cos
-        
-        const p3x = xEnd * cos - yEnd * sin
-        const p3y = xEnd * sin + yEnd * cos
-        
-        const p4x = xStart * cos - yEnd * sin
-        const p4y = xStart * sin + yEnd * cos
-
-        const channelPath = new THREE.Path()
-        channelPath.moveTo(p1x, p1y)
-        channelPath.lineTo(p2x, p2y)
-        channelPath.lineTo(p3x, p3y)
-        channelPath.lineTo(p4x, p4y)
-        channelPath.closePath()
-
-        shape.holes.push(channelPath)
-      }
-    }
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const px = Math.cos(a) * R_port
+    const py = Math.sin(a) * R_port
+    const portHole = new THREE.Path()
+    portHole.absarc(px, py, r_port_inner, 0, Math.PI * 2, true)
+    shape.holes.push(portHole)
   }
 
   return shape
