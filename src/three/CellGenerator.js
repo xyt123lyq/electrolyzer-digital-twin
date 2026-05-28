@@ -65,10 +65,10 @@ export const CELL_CONFIG = {
     thickness: 1.2
   },
   lug: {
-    width: 13,
-    length: 18,
+    width: 15,
+    length: 25,
     thickness: 2,
-    holeRadius: 3.1
+    holeRadius: 3.4
   },
   flowChannel: {
     grooveWidth: 1.05,
@@ -249,7 +249,7 @@ function _makePhotoCoverShape(radius, earExtend, earHalfH) {
   const ey = earHalfH
   const joinA = Math.asin(ey / radius)
   const xJoin = Math.cos(joinA) * radius
-  const cornerR = Math.min(6, earHalfH * 0.7)
+  const cornerR = Math.min(4.8, earHalfH * 0.55)
 
   shape.moveTo(xJoin, -ey)
   shape.lineTo(ex - cornerR, -ey)
@@ -1363,6 +1363,7 @@ function _addMountingLug(parent, plateR, plateT, isAnode) {
   const c = CELL_CONFIG
   const mat = MaterialPresets.busLug()
   const holeMat = new THREE.MeshStandardMaterial({ color: 0x404040, metalness: 0.3, roughness: 0.7 })
+  const ringMat = MaterialPresets.nut()
 
   const lugW = c.lug.width
   const lugL = c.lug.length
@@ -1393,6 +1394,9 @@ function _addMountingLug(parent, plateR, plateT, isAnode) {
   const holeGeo = new THREE.CylinderGeometry(holeR, holeR, plateT * 1.3, 16)
   const hole = new THREE.Mesh(holeGeo, holeMat)
   hole.rotation.x = Math.PI / 2
+  const ringGeo = new THREE.TorusGeometry(holeR + 0.75, 0.23, 8, 24)
+  const ringTop = new THREE.Mesh(ringGeo, ringMat)
+  const ringBottom = new THREE.Mesh(ringGeo, ringMat)
 
   if (isAnode) {
     lugMesh.position.set(-(plateR - 1), 0, 0)
@@ -1402,9 +1406,13 @@ function _addMountingLug(parent, plateR, plateT, isAnode) {
     lugMesh.position.set(plateR - 1, 0, 0)
     hole.position.set(plateR + lugL - halfW - 1, 0, 0)
   }
+  ringTop.position.set(hole.position.x, hole.position.y, plateT / 2 + 0.07)
+  ringBottom.position.set(hole.position.x, hole.position.y, -plateT / 2 - 0.07)
 
   parent.add(lugMesh)
   parent.add(hole)
+  parent.add(ringTop)
+  parent.add(ringBottom)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1413,6 +1421,13 @@ function _addMountingLug(parent, plateR, plateT, isAnode) {
 function _addGasPorts(parent, portFaceZ) {
   const mat = MaterialPresets.gasPort()
   const boreMat = new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 0.1, roughness: 0.9 })
+  const sealMat = new THREE.MeshPhysicalMaterial({
+    color: 0xe8e1d2,
+    metalness: 0.0,
+    roughness: 0.66,
+    transparent: true,
+    opacity: 0.78
+  })
 
   // 4 elements arranged at 12, 3, 6, 9 o'clock.
   // 12, 3, 9 o'clock are push-in fittings.
@@ -1428,6 +1443,10 @@ function _addGasPorts(parent, portFaceZ) {
     const hexR = 6.2
     const bodyR = 4.1
     const bodyH = 10.5
+
+    const seal = new THREE.Mesh(new THREE.TorusGeometry(hexR + 1.4, 0.42, 8, 32), sealMat)
+    seal.position.z = portFaceZ + 0.24
+    sub.add(seal)
 
     const flange = new THREE.Mesh(
       new THREE.CylinderGeometry(hexR + 1, hexR + 1, 2, 20), mat)
@@ -1471,6 +1490,16 @@ function _addHexSocketPlug(parent, x, y, z) {
   const plug = _makeHexSocketPlug(4.7, 3.5, mat, boreMat)
   plug.position.set(x, y, z)
   parent.add(plug)
+
+  const sealMat = new THREE.MeshBasicMaterial({
+    color: 0xddd3c4,
+    transparent: true,
+    opacity: 0.45,
+    depthWrite: false
+  })
+  const seal = new THREE.Mesh(new THREE.TorusGeometry(5.3, 0.24, 8, 28), sealMat)
+  seal.position.set(x, y, z - 1.9)
+  parent.add(seal)
 }
 
 function _makeHexSocketPlug(radius, height, mat, boreMat) {

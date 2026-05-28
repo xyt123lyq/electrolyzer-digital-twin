@@ -14,26 +14,26 @@ export const MaterialPresets = {
     })
   },
 
-  // 螺柱轴身 — 实物: 黑色氧化处理 (照片 #8)
+  // 螺柱轴身 — 实物: 不锈钢外露螺纹
   boltShaft() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0x1a1c20,
-      metalness: 0.82,
-      roughness: 0.55,
-      envMapIntensity: 0.7,
-      clearcoat: 0.08,
-      clearcoatRoughness: 0.7
+      color: 0xb8bcc0,
+      metalness: 0.92,
+      roughness: 0.24,
+      envMapIntensity: 1.4,
+      clearcoat: 0.22,
+      clearcoatRoughness: 0.22
     })
   },
 
   // BOM #2 不锈钢螺母 — 六角锻造面, 镀铬光泽
   nut() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xa0a5ab,
+      color: 0xb6b4ad,
       metalness: 0.92,
-      roughness: 0.25,
-      envMapIntensity: 1.4,
-      clearcoat: 0.2,
+      roughness: 0.22,
+      envMapIntensity: 1.55,
+      clearcoat: 0.28,
       clearcoatRoughness: 0.2
     })
   },
@@ -41,12 +41,12 @@ export const MaterialPresets = {
   // BOM #5/#11 紫铜端盖 — 实物: 暖玫瑰金, 磨砂/缎面质感
   endplate() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xD89068,
-      metalness: 0.78,
-      roughness: 0.45,
-      envMapIntensity: 1.0,
-      clearcoat: 0.08,
-      clearcoatRoughness: 0.25,
+      color: 0xc78667,
+      metalness: 0.82,
+      roughness: 0.50,
+      envMapIntensity: 1.15,
+      clearcoat: 0.12,
+      clearcoatRoughness: 0.34,
       emissive: 0x100504,
       emissiveIntensity: 0.04,
       sheen: 0.1,
@@ -177,12 +177,12 @@ export const MaterialPresets = {
   // 气液接头 — 镀铬不锈钢: 高反射镜面
   gasPort() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xf2f5f7,
-      metalness: 0.72,
-      roughness: 0.24,
-      envMapIntensity: 2.4,
-      clearcoat: 0.65,
-      clearcoatRoughness: 0.16
+      color: 0xb8b6ae,
+      metalness: 0.94,
+      roughness: 0.18,
+      envMapIntensity: 1.9,
+      clearcoat: 0.42,
+      clearcoatRoughness: 0.12
     })
   },
 
