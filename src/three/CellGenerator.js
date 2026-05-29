@@ -1427,14 +1427,17 @@ function _addGasPorts(parent, portFaceZ) {
     opacity: 0.78
   })
 
-  // 4 elements arranged at 12, 3, 6, 9 o'clock.
-  // 12, 3, 9 o'clock are push-in fittings.
-  // 6 o'clock is a hex socket plug.
-  const fittings = [
-    { x: 0, y: 24 },      // 12 o'clock
-    { x: 22, y: -8 },     // lower right
-    { x: -22, y: -8 },    // lower left
+  // 3 push-in fittings on upper half:
+  // top-center + upper-left + upper-right (matching the physical top cover).
+  const fitPolar = [
+    { r: 24.0, deg: 90 },
+    { r: 18.2, deg: 150 },
+    { r: 18.2, deg: 30 }
   ]
+  const fittings = fitPolar.map(({ r, deg }) => {
+    const a = deg * Math.PI / 180
+    return { x: Math.cos(a) * r, y: Math.sin(a) * r }
+  })
 
   for (const p of fittings) {
     const sub = new THREE.Group()
