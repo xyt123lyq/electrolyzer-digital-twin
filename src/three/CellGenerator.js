@@ -453,9 +453,47 @@ function _makeCentralCutoutPath() {
   return path
 }
 
-function _makeBackingPlateShape(R) {
+function _lugHoleX(plateR, lugDir) {
+  const lug = CELL_CONFIG.lug
+  const insert = 3
+  return lugDir * (plateR - insert + lug.length - lug.width / 2 - 1)
+}
+
+function _makeBackingPlateShape(R, lugDir = 0) {
+  const c = CELL_CONFIG
   const shape = new THREE.Shape()
-  shape.absarc(0, 0, R, 0, Math.PI * 2, false)
+
+  if (lugDir === 0) {
+    shape.absarc(0, 0, R, 0, Math.PI * 2, false)
+  } else {
+    const lugW = c.lug.width
+    const lugL = c.lug.length
+    const halfW = lugW / 2
+    const insert = 3
+    const joinAngle = Math.asin(Math.min(0.95, halfW / R))
+    const joinX = Math.cos(joinAngle) * R
+    const endCenterX = lugDir * (R - insert + lugL - halfW)
+
+    if (lugDir > 0) {
+      shape.moveTo(joinX, -halfW)
+      shape.lineTo(endCenterX, -halfW)
+      shape.absarc(endCenterX, 0, halfW, -Math.PI / 2, Math.PI / 2, false)
+      shape.lineTo(joinX, halfW)
+      shape.absarc(0, 0, R, joinAngle, Math.PI * 2 - joinAngle, false)
+    } else {
+      shape.moveTo(-joinX, halfW)
+      shape.lineTo(endCenterX, halfW)
+      shape.absarc(endCenterX, 0, halfW, Math.PI / 2, Math.PI * 1.5, false)
+      shape.lineTo(-joinX, -halfW)
+      shape.absarc(0, 0, R, -Math.PI + joinAngle, Math.PI - joinAngle, false)
+    }
+    shape.closePath()
+
+    const holeX = _lugHoleX(R, lugDir)
+    const lugHole = new THREE.Path()
+    lugHole.absarc(holeX, 0, c.lug.holeRadius || 2.5, 0, Math.PI * 2, true)
+    shape.holes.push(lugHole)
+  }
   
   // Cutout 4 port holes
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
@@ -501,7 +539,7 @@ function _makeAnodePlate(name, zPos) {
   const mat = MaterialPresets.conductive()
 
   // Base backing plate (thickness 2.65 mm)
-  const backingShape = _makeBackingPlateShape(R)
+  const backingShape = _makeBackingPlateShape(R, -1)
   const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
   backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
   const backingMesh = new THREE.Mesh(backingGeo, mat)
@@ -523,7 +561,7 @@ function _makeAnodePlate(name, zPos) {
   _addFlowChannelGroove(group, -T / 2)
 
   _addPlateBoltHoles(group, T)
-  _addMountingLug(group, R, T, true)
+  _addMountingLugChamfer(group, R, T, true)
 
   group.position.z = zPos
   return group
@@ -544,7 +582,7 @@ function _makeCathodePlate(name, zPos) {
   const mat = MaterialPresets.conductive()
 
   // Base backing plate (thickness 2.65 mm)
-  const backingShape = _makeBackingPlateShape(R)
+  const backingShape = _makeBackingPlateShape(R, 1)
   const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
   backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
   const backingMesh = new THREE.Mesh(backingGeo, mat)
@@ -571,7 +609,7 @@ function _makeCathodePlate(name, zPos) {
   group.add(meshGroup)
 
   _addPlateBoltHoles(group, T)
-  _addMountingLug(group, R, T, false)
+  _addMountingLugChamfer(group, R, T, false)
 
   group.position.z = zPos
   return group
@@ -1356,58 +1394,21 @@ function _addPlateBoltHoles(parent, plateT) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 耳片
 // ─────────────────────────────────────────────────────────────────────────────
-function _addMountingLug(parent, plateR, plateT, isAnode) {
+function _addMountingLugChamfer(parent, plateR, plateT, isAnode) {
   const c = CELL_CONFIG
-  const mat = MaterialPresets.busLug()
-  const holeMat = new THREE.MeshStandardMaterial({ color: 0x404040, metalness: 0.3, roughness: 0.7 })
   const ringMat = MaterialPresets.nut()
 
-  const lugW = c.lug.width
-  const lugL = c.lug.length
   const holeR = c.lug.holeRadius || 2.5
 
-  const shape = new THREE.Shape()
-  const halfW = lugW / 2
-  const neck = 3
-  shape.moveTo(0, -halfW)
-  shape.lineTo(lugL - halfW, -halfW)
-  shape.absarc(lugL - halfW, 0, halfW, -Math.PI / 2, Math.PI / 2, false)
-  shape.lineTo(0, halfW)
-  shape.quadraticCurveTo(-neck, halfW, -neck, 0)
-  shape.quadraticCurveTo(-neck, -halfW, 0, -halfW)
-  shape.closePath()
+  const dir = isAnode ? -1 : 1
+  const holeX = _lugHoleX(plateR, dir)
 
-  const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: plateT,
-    bevelEnabled: true,
-    bevelThickness: 0.15,
-    bevelSize: 0.25,
-    bevelSegments: 2
-  })
-  geo.translate(0, 0, -plateT / 2)
-  const lugMesh = new THREE.Mesh(geo, mat)
-  lugMesh.castShadow = true
-
-  const holeGeo = new THREE.CylinderGeometry(holeR, holeR, plateT * 1.3, 16)
-  const hole = new THREE.Mesh(holeGeo, holeMat)
-  hole.rotation.x = Math.PI / 2
-  const ringGeo = new THREE.TorusGeometry(holeR + 0.75, 0.23, 8, 24)
+  const ringGeo = new THREE.TorusGeometry(holeR + 0.18, 0.16, 8, 28)
   const ringTop = new THREE.Mesh(ringGeo, ringMat)
   const ringBottom = new THREE.Mesh(ringGeo, ringMat)
+  ringTop.position.set(holeX, 0, plateT / 2 + 0.07)
+  ringBottom.position.set(holeX, 0, -plateT / 2 - 0.07)
 
-  if (isAnode) {
-    lugMesh.position.set(-(plateR - 1), 0, 0)
-    lugMesh.rotation.z = Math.PI
-    hole.position.set(-(plateR + lugL - halfW - 1), 0, 0)
-  } else {
-    lugMesh.position.set(plateR - 1, 0, 0)
-    hole.position.set(plateR + lugL - halfW - 1, 0, 0)
-  }
-  ringTop.position.set(hole.position.x, hole.position.y, plateT / 2 + 0.07)
-  ringBottom.position.set(hole.position.x, hole.position.y, -plateT / 2 - 0.07)
-
-  parent.add(lugMesh)
-  parent.add(hole)
   parent.add(ringTop)
   parent.add(ringBottom)
 }
