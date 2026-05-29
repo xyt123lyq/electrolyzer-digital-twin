@@ -1274,10 +1274,14 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   return shape
 }
 
-function _makeSurfaceHoleMaterial(color) {
+function _makeSurfaceHoleMaterial(color, side = THREE.FrontSide) {
   return new THREE.MeshBasicMaterial({
     color,
-    side: THREE.DoubleSide,
+    side,
+    transparent: true,
+    opacity: 0.96,
+    depthWrite: false,
+    depthTest: true,
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1
@@ -1300,7 +1304,7 @@ function _addPhotoCloverSealAt(parent, surfZ) {
   seal.position.z = surfZ + side * 0.72
   parent.add(seal)
 
-  const holeMat = _makeSurfaceHoleMaterial(0x111111)
+  const holeMat = _makeSurfaceHoleMaterial(0x111111, side > 0 ? THREE.FrontSide : THREE.BackSide)
   const holeGeo = new THREE.CircleGeometry(2.4, 36)
   const holeR = 20.5
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
@@ -1379,17 +1383,19 @@ function _addBoltHoles(parent, thickness, count) {
   const pcdR = c.bolt.pcd / 2
   const hR = c.bolt.diameter / 2
 
-  const holeMat = _makeSurfaceHoleMaterial(0x101010)
   const holeGeo = new THREE.CircleGeometry(hR, 32)
+  const surfaceMats = [
+    { z: thickness / 2, side: 1, mat: _makeSurfaceHoleMaterial(0x101010, THREE.FrontSide) },
+    { z: -thickness / 2, side: -1, mat: _makeSurfaceHoleMaterial(0x101010, THREE.BackSide) }
+  ]
 
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + Math.PI / count
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
-    for (const surfZ of [thickness / 2, -thickness / 2]) {
-      const side = surfZ >= 0 ? 1 : -1
-      const hole = new THREE.Mesh(holeGeo, holeMat)
-      hole.position.set(x, y, surfZ + side * 0.04)
+    for (const surface of surfaceMats) {
+      const hole = new THREE.Mesh(holeGeo, surface.mat)
+      hole.position.set(x, y, surface.z + surface.side * 0.04)
       parent.add(hole)
     }
   }
@@ -1440,17 +1446,19 @@ function _addPlateBoltHoles(parent, plateT) {
   const pcdR = c.bolt.pcd / 2
   const hR = c.bolt.diameter / 2
 
-  const holeMat = _makeSurfaceHoleMaterial(0x101010)
   const holeGeo = new THREE.CircleGeometry(hR, 32)
+  const surfaceMats = [
+    { z: plateT / 2, side: 1, mat: _makeSurfaceHoleMaterial(0x101010, THREE.FrontSide) },
+    { z: -plateT / 2, side: -1, mat: _makeSurfaceHoleMaterial(0x101010, THREE.BackSide) }
+  ]
 
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
-    for (const surfZ of [plateT / 2, -plateT / 2]) {
-      const side = surfZ >= 0 ? 1 : -1
-      const hole = new THREE.Mesh(holeGeo, holeMat)
-      hole.position.set(x, y, surfZ + side * 0.04)
+    for (const surface of surfaceMats) {
+      const hole = new THREE.Mesh(holeGeo, surface.mat)
+      hole.position.set(x, y, surface.z + surface.side * 0.04)
       parent.add(hole)
     }
   }
