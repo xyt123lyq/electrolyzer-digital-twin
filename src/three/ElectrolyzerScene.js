@@ -4,7 +4,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { gsap } from 'gsap'
 import { buildCell, CELL_CONFIG, cellCoreThickness } from './CellGenerator.js'
-import { explodeCell, collapseCell, ExplosionConfig } from './ExplosionAnimation.js'
+import { explodeCell, collapseCell, ExplosionConfig, updateExplosionDistance } from './ExplosionAnimation.js'
 import { MaterialPresets } from './Materials.js'
 
 function detectTier() {
@@ -291,10 +291,18 @@ export class ElectrolyzerScene {
       gsap.to(this.cellAssembly.rotation, { y: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: () => { this._needsRender = true } })
       this._emit('cellOpening', 0)
       this._focusCell()
+      
+      // 动画从物理层面抬高组件，防止在拉伸时底部零件穿透地板
+      const scale = this.cell.userData.explosionScale ?? 1.0
+      const lift = Math.max(0, (scale - 1.0) * 35)
+      gsap.to(this.cellAssembly.position, { y: lift, duration: 1.1, ease: 'power3.out', onUpdate: () => { this._needsRender = true } })
+
       explodeCell(this.cell, () => {
         this._emit('cellExploded', 0)
       })
     } else if (state === 'exploded') {
+      // 归位组件高度到 0
+      gsap.to(this.cellAssembly.position, { y: 0, duration: 0.85, ease: 'power3.inOut', onUpdate: () => { this._needsRender = true } })
       collapseCell(this.cell, () => {
         this._emit('cellCollapsed', 0)
         this.autoRotate = true
@@ -316,9 +324,13 @@ export class ElectrolyzerScene {
     this._focusCell()
 
     if (state === 'exploded' || state === 'exploding') {
+      gsap.to(this.cellAssembly.position, { y: 0, duration: 0.85, ease: 'power3.inOut', onUpdate: () => { this._needsRender = true } })
       collapseCell(this.cell)
       const tryExplode = (attempts = 0) => {
         if (this.cell.userData.state === 'closed') {
+          const scale = this.cell.userData.explosionScale ?? 1.0
+          const lift = Math.max(0, (scale - 1.0) * 35)
+          gsap.to(this.cellAssembly.position, { y: lift, duration: 1.1, ease: 'power3.out', onUpdate: () => { this._needsRender = true } })
           explodeCell(this.cell, () => { this._emit('cellExploded', 0) })
         } else if (attempts < 8) {
           gsap.delayedCall(0.2, () => tryExplode(attempts + 1))
@@ -326,6 +338,9 @@ export class ElectrolyzerScene {
       }
       gsap.delayedCall(ExplosionConfig.collapseDuration + 0.15, () => tryExplode(0))
     } else if (state === 'closed') {
+      const scale = this.cell.userData.explosionScale ?? 1.0
+      const lift = Math.max(0, (scale - 1.0) * 35)
+      gsap.to(this.cellAssembly.position, { y: lift, duration: 1.1, ease: 'power3.out', onUpdate: () => { this._needsRender = true } })
       explodeCell(this.cell, () => { this._emit('cellExploded', 0) })
     }
     this._needsRender = true
@@ -333,6 +348,7 @@ export class ElectrolyzerScene {
 
   resetAll() {
     if (!this.cell) return
+    gsap.to(this.cellAssembly.position, { y: 0, duration: 0.85, ease: 'power3.inOut', onUpdate: () => { this._needsRender = true } })
     if (this.cell.userData.state !== 'closed') {
       collapseCell(this.cell, () => {
         this._emit('cellCollapsed', 0)
@@ -415,6 +431,22 @@ export class ElectrolyzerScene {
       const delta = Math.min(this.clock.getDelta(), 0.05)
       if (this.controls.enableDamping) this.controls.update()
 
+      // ─── 驱动流道流动可视化 ───
+      let hasVisibleFlow = false
+      if (this.cell && this.cell.userData.flowVisualizers) {
+        const vizs = this.cell.userData.flowVisualizers
+        for (const viz of vizs) {
+          const isVisible = viz.group ? viz.group.visible : viz._visible
+          if (isVisible) {
+            viz.update(delta)
+            hasVisibleFlow = true
+          }
+        }
+      }
+      if (hasVisibleFlow) {
+        this._needsRender = true
+      }
+
       if (this._hasActiveAnimation()) {
         if (this.autoRotate) this.cellAssembly.rotation.y += delta * 0.25
         if (this.cell?.userData?.state === 'exploded') {
@@ -439,6 +471,61 @@ export class ElectrolyzerScene {
       }
     }
     loop()
+  }
+
+  /**
+   * 切换 CFD 流场分析模式
+   * @param {number} mode - 0: 常规流动, 1: 流速分布, 2: 压力梯度, 3: 两相流含气, 4: 关闭
+   */
+  setCFDAnalysisMode(mode) {
+    if (!this.cell || !this.cell.userData.flowVisualizers) return
+    const vizs = this.cell.userData.flowVisualizers
+    for (const viz of vizs) {
+      if (typeof viz.setAnalysisMode === 'function') {
+        viz.setAnalysisMode(mode)
+      } else if (typeof viz.setVelocity === 'function') {
+        // FlowVisualizer (serpentine) uses setAnalysisMode too because we added it
+        viz.setAnalysisMode(mode)
+      }
+    }
+    this._needsRender = true
+  }
+
+  /**
+   * 控制流体流速 (由流量滑块/传感器遥测触发，0.0 - 1.0)
+   */
+  setCFDVelocity(v) {
+    if (!this.cell || !this.cell.userData.flowVisualizers) return
+    const vizs = this.cell.userData.flowVisualizers
+    for (const viz of vizs) {
+      if (typeof viz.setFlowVelocity === 'function') {
+        viz.setFlowVelocity(v)
+      } else if (typeof viz.setVelocity === 'function') {
+        viz.setVelocity(v)
+      }
+    }
+    this._needsRender = true
+  }
+
+  /**
+   * 动态控制爆炸拆解零件的拉伸间距比例
+   * @param {number} scale - 缩放比例 (如 0.3 - 2.5)
+   */
+  setExplosionScale(scale) {
+    if (!this.cell) return
+    
+    // 智能联动：如果当前是闭合状态，拖动间距条自动触发爆炸拆解，提升直觉体验
+    if (this.cell.userData.state === 'closed') {
+      this.triggerExplode()
+    }
+    
+    updateExplosionDistance(this.cell, scale)
+    
+    // 动态提升模型高度，防止在拉伸时底部零件穿透地板
+    const lift = Math.max(0, (scale - 1.0) * 35)
+    this.cellAssembly.position.y = lift
+    
+    this._needsRender = true
   }
 
   startAutoDemo() {

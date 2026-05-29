@@ -36,6 +36,7 @@
           @reset="reset"
           @toggleDemo="toggleDemo"
           @fullscreen="toggleFullscreen"
+          @updateSpacing="updateSpacing"
         />
       </div>
     </section>
@@ -110,6 +111,9 @@ function toggleFullscreen() {
   } else {
     el.requestFullscreen().catch(err => console.warn('fullscreen failed:', err))
   }
+}
+function updateSpacing(scale) {
+  electrolyzerRef.value?.setExplosionScale(scale)
 }
 </script>
 

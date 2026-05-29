@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import { MaterialPresets } from './Materials.js'
+import { PlateFlowVisualizer } from './PlateFlowVisualizer.js'
+import { createFlowVisualization } from './FlowVisualizer.js'
 
 /**
  * 电解槽完整结构 (从上到下):
@@ -145,10 +147,42 @@ export function buildCell(index = 0) {
   const nuts         = _makeNuts(z)
   const bolts        = _makeBolts(z)
 
+  // ─── 实例化流道流动可视化 (CFD Visualizers) ───
+  const vizList = []
+
+  // 1. 阴极板平行流线 (正面刻槽, z=1.5mm)
+  const cathPlateViz = new PlateFlowVisualizer()
+  cathPlateViz.create(false) // 阴极从右到左/氢水两相
+  cathPlateViz.group.position.z = c.plate.thickness / 2 + 0.02
+  cathodePlate.add(cathPlateViz.group)
+  vizList.push(cathPlateViz)
+
+  // 2. 阳极板平行流线 (背面刻槽, z=-1.5mm)
+  const anodPlateViz = new PlateFlowVisualizer()
+  anodPlateViz.create(true) // 阳极从左到右/氧水两相
+  anodPlateViz.group.position.z = -c.plate.thickness / 2 - 0.02
+  anodePlate.add(anodPlateViz.group)
+  vizList.push(anodPlateViz)
+
+  // 3. MEA_3 (阳极侧膜表面, 平行流线 — 100% 物理一致)
+  const mea3Viz = new PlateFlowVisualizer()
+  mea3Viz.create(true) // 阳极从左到右/氧水两相
+  mea3Viz.group.position.z = c.mea.thickness / 2 + 0.01
+  mea3.add(mea3Viz.group)
+  vizList.push(mea3Viz)
+
+  // 4. MEA_4 (阴极侧膜表面, 平行流线 — 100% 物理一致，旋转180度镜像)
+  const mea4Viz = new PlateFlowVisualizer()
+  mea4Viz.create(false) // 阴极从右到左/氢水两相
+  mea4Viz.group.position.z = -c.mea.thickness / 2 - 0.01
+  mea4.add(mea4Viz.group)
+  vizList.push(mea4Viz)
+
   const group = new THREE.Group()
   group.name = `Cell_${index + 1}`
   group.userData.cellIndex = index
   group.userData.state = 'closed'
+  group.userData.flowVisualizers = vizList
 
   group.add(
     topCover, upperGasket, anodePlate,
@@ -291,7 +325,7 @@ function _makePinkCover(name, isTop, zPos) {
     bevelThickness: 0.45,
     bevelSize: 0.75,
     bevelSegments: 3,
-    curveSegments: 64
+    curveSegments: 128
   })
   geo.translate(0, 0, -T / 2)
 
@@ -329,7 +363,19 @@ function _makeWhiteGasketWithPattern(name, zPos) {
   const mat = MaterialPresets.flowPlate()
 
   const shape = _makeCircleShape(flatR)
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false })
+
+  // 2. 切割出4个圆形的流道孔，分别位于上、下、左、右侧耳朵位置，对应实物图的4个小内通孔
+  const holeR = 20.5
+  const holeRadius = 2.4
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const holePath = new THREE.Path()
+    const px = Math.cos(a) * holeR
+    const py = Math.sin(a) * holeR
+    holePath.absarc(px, py, holeRadius, 0, Math.PI * 2, true)
+    shape.holes.push(holePath)
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
   const body = new THREE.Mesh(geo, mat)
   body.castShadow = true
@@ -338,7 +384,8 @@ function _makeWhiteGasketWithPattern(name, zPos) {
   // _addGasketPattern(group, T / 2, true)
   // _addGasketPattern(group, -T / 2, false)
 
-  _addBoltHoles(group, T, 8)
+  // 修改为12个外侧螺栓孔以完全对齐实物！
+  _addBoltHoles(group, T, 12)
   _addPhotoCloverSealAt(group, T / 2)
   _addPhotoCloverSealAt(group, -T / 2)
 
@@ -361,14 +408,27 @@ function _makeWhiteGasketWithPatternBottom(name, zPos) {
   const mat = MaterialPresets.flowPlate()
 
   const shape = _makeCircleShape(flatR)
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false })
+
+  // 2. 切割出4个圆形的流道孔，分别位于上、下、left、right侧耳朵位置，对应实物图的4个小内通孔
+  const holeR = 20.5
+  const holeRadius = 2.4
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const holePath = new THREE.Path()
+    const px = Math.cos(a) * holeR
+    const py = Math.sin(a) * holeR
+    holePath.absarc(px, py, holeRadius, 0, Math.PI * 2, true)
+    shape.holes.push(holePath)
+  }
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
   const body = new THREE.Mesh(geo, mat)
   body.castShadow = true
   group.add(body)
 
   // _addGasketPattern(group, T / 2, true)
-  _addBoltHoles(group, T, 8)
+  // 修改为12个外侧螺栓孔以完全对齐实物！
+  _addBoltHoles(group, T, 12)
   _addPhotoCloverSealAt(group, T / 2)
 
   group.position.z = zPos
@@ -411,7 +471,7 @@ function _addBlackGasketOnPattern(parent, zPos) {
   hole.quadraticCurveTo(-holeW / 2, -holeH / 2, -holeW / 2 + holeRadius, -holeH / 2)
   shape.holes.push(hole)
 
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false, curveSegments: 64 })
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.z = zPos - bgT / 2
@@ -532,7 +592,7 @@ function _makeFacePlateShape(R) {
 
 function _makeAnodePlate(name, zPos) {
   const c = CELL_CONFIG
-  const R = c.innerDiameter / 2
+  const R = c.diameter / 2
   const T = c.plate.thickness
 
   const group = new THREE.Group()
@@ -543,7 +603,7 @@ function _makeAnodePlate(name, zPos) {
 
   // Base backing plate (thickness 2.65 mm)
   const backingShape = _makeBackingPlateShape(R, -1)
-  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
+  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 128 })
   backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
   const backingMesh = new THREE.Mesh(backingGeo, mat)
   backingMesh.castShadow = true
@@ -552,7 +612,7 @@ function _makeAnodePlate(name, zPos) {
 
   // Face plate (thickness 0.35 mm) with cutouts
   const faceShape = _makeFacePlateShape(R)
-  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
+  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 128 })
   faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
   const faceMesh = new THREE.Mesh(faceGeo, mat)
   faceMesh.castShadow = true
@@ -575,7 +635,7 @@ function _makeAnodePlate(name, zPos) {
 // ─────────────────────────────────────────────────────────────────────────────
 function _makeCathodePlate(name, zPos) {
   const c = CELL_CONFIG
-  const R = c.innerDiameter / 2
+  const R = c.diameter / 2
   const T = c.plate.thickness
 
   const group = new THREE.Group()
@@ -586,7 +646,7 @@ function _makeCathodePlate(name, zPos) {
 
   // Base backing plate (thickness 2.65 mm)
   const backingShape = _makeBackingPlateShape(R, 1)
-  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
+  const backingGeo = new THREE.ExtrudeGeometry(backingShape, { depth: T - c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 128 })
   backingGeo.translate(0, 0, -(T - c.flowChannel.grooveDepth) / 2)
   const backingMesh = new THREE.Mesh(backingGeo, mat)
   backingMesh.castShadow = true
@@ -595,7 +655,7 @@ function _makeCathodePlate(name, zPos) {
 
   // Face plate (thickness 0.35 mm) with cutouts
   const faceShape = _makeFacePlateShape(R)
-  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 48 })
+  const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 128 })
   faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
   const faceMesh = new THREE.Mesh(faceGeo, mat)
   faceMesh.castShadow = true
@@ -703,7 +763,7 @@ function _makeThinWhite(name, zPos) {
   window.closePath()
   shape.holes.push(window)
 
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false })
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
   const disc = new THREE.Mesh(geo, mat)
   group.add(disc)
@@ -894,8 +954,7 @@ function _addFlowChannelGroove(parent, surfZ) {
   const side = surfZ >= 0 ? 1 : -1
   const grooveDepth = c.flowChannel.grooveDepth
   const grooveSize = c.flowChannel.recessSize
-  const channelW = c.flowChannel.grooveWidth * 0.55
-  
+
   // Recess floor top is strictly sunken by grooveDepth (0.35 mm) relative to surfZ
   const grooveFaceZ = surfZ - side * grooveDepth
 
@@ -924,19 +983,59 @@ function _addFlowChannelGroove(parent, surfZ) {
     parent.add(rim)
   }
 
-  // 11 Central flow lanes: thickness 0.11 mm, sitting flush on the recess floor (depth 0.35 to 0.24)
+  // 11 Curved Flow Channels perfectly matching PlateFlowVisualizer.js
   const laneCount = 11
   const laneSpacing = grooveSize / (laneCount + 1)
+  const xLaneHalf = (grooveSize - 5.2) / 2
+  const portR = 24.0
+
   for (let i = 0; i < laneCount; i++) {
-    const y = -grooveSize / 2 + laneSpacing * (i + 1)
-    const lane = new THREE.Mesh(new THREE.BoxGeometry(grooveSize - 5.2, channelW, 0.11), channelMat)
-    lane.position.set(0, y, grooveFaceZ + side * 0.055)
-    parent.add(lane)
+    const yLane = -grooveSize / 2 + laneSpacing * (i + 1)
+    const points = []
+    
+    // Start: left port
+    points.push(new THREE.Vector3(-portR, 0, 0))
+
+    // Left transition
+    if (i === 0 || i === 1 || i === 9 || i === 10) {
+      const sgn = i < 5 ? -1 : 1
+      points.push(new THREE.Vector3(-portR + 2.15, sgn * 2.15, 0))
+      points.push(new THREE.Vector3(-xLaneHalf - 1.0, sgn * (grooveSize / 2 + 0.2), 0))
+    } else {
+      const step = Math.abs(i - 5)
+      const branchX = 19.25 - step * 0.95
+      points.push(new THREE.Vector3(-branchX, (i - 5) * 1.15, 0))
+    }
+
+    // Central lane
+    points.push(new THREE.Vector3(-xLaneHalf, yLane, 0))
+    points.push(new THREE.Vector3(xLaneHalf, yLane, 0))
+
+    // Right transition
+    if (i === 0 || i === 1 || i === 9 || i === 10) {
+      const sgn = i < 5 ? -1 : 1
+      points.push(new THREE.Vector3(xLaneHalf + 1.0, sgn * (grooveSize / 2 + 0.2), 0))
+      points.push(new THREE.Vector3(portR - 2.15, sgn * 2.15, 0))
+    } else {
+      const step = Math.abs(i - 5)
+      const branchX = 19.25 - step * 0.95
+      points.push(new THREE.Vector3(branchX, (i - 5) * 1.15, 0))
+    }
+
+    // End: right port
+    points.push(new THREE.Vector3(portR, 0, 0))
+
+    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.05)
+    
+    // Build tube mesh for the channel
+    const geo = new THREE.TubeGeometry(curve, 64, 0.18, 8, false)
+    // Shift slightly in Z to sit flush on the recess floor
+    geo.translate(0, 0, grooveFaceZ + side * 0.08)
+    const laneMesh = new THREE.Mesh(geo, channelMat)
+    parent.add(laneMesh)
   }
 
-  const portR = 24.0 // Align perfectly with R_port of wavy gaskets (24.0)
-  _addPortStartedArcGrooves(parent, 1, portR, grooveSize, grooveFaceZ, side)
-  _addPortStartedArcGrooves(parent, -1, portR, grooveSize, grooveFaceZ, side)
+  // Draw 4 port cylinders
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const px = Math.cos(a) * portR
     const py = Math.sin(a) * portR
@@ -944,41 +1043,6 @@ function _addFlowChannelGroove(parent, surfZ) {
     port.rotation.x = Math.PI / 2
     port.position.set(px, py, grooveFaceZ + side * 0.08)
     parent.add(port)
-
-    // Flow channel branches ONLY on left (Math.PI) and right (0) ports!
-    if (a === 0 || a === Math.PI) {
-      for (let i = -2; i <= 2; i++) { // 5 horizontal slots!
-        const step = Math.abs(i)
-        const branchLen = 10.1 - step * 1.9 // starts at the side port and steps toward the active area
-        const branchX = 19.25 - step * 0.95
-
-        const branch = new THREE.Mesh(new THREE.BoxGeometry(branchLen, 0.28, 0.10), channelMat)
-        branch.position.set(branchX * Math.cos(a), i * 1.15, grooveFaceZ + side * 0.05)
-        parent.add(branch)
-      }
-    }
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-function _addPortStartedArcGrooves(parent, dir, portR, grooveSize, grooveFaceZ, side) {
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x3e464a,
-    metalness: 0.68,
-    roughness: 0.48
-  })
-  const activeEdgeX = dir * (grooveSize / 2 + 0.55)
-  const portEdgeX = dir * (portR - 2.15)
-  const z = grooveFaceZ + side * 0.105
-
-  for (const sgn of [1, -1]) {
-    const curve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(portEdgeX, sgn * 2.15, z),
-      new THREE.Vector3(dir * (portR - 4.7), sgn * 13.8, z),
-      new THREE.Vector3(activeEdgeX, sgn * (grooveSize / 2 + 0.2), z)
-    )
-    const groove = new THREE.Mesh(new THREE.TubeGeometry(curve, 42, 0.16, 8, false), mat)
-    parent.add(groove)
   }
 }
 
@@ -989,7 +1053,7 @@ function _addPlateBlackGasket(parent, surfZ) {
 
   const mat = MaterialPresets.gasket()
 
-  const shape = _makeWavySealShape(25, 5.6, 4.2, 128)
+  const shape = _makeWavySealShape(24.6, 5.2, 2.0, 128)
   const geo = new THREE.ExtrudeGeometry(shape, { depth: bgT, bevelEnabled: false, curveSegments: 64 })
   geo.translate(0, 0, -bgT / 2)
   const mesh = new THREE.Mesh(geo, mat)
@@ -1135,35 +1199,35 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   shape.moveTo(R_port, r_port_outer)
 
   // Top-Right Quadrant
-  shape.bezierCurveTo(R_port - offset_port, r_port_outer, W_out, L_straight - offset_straight, W_out, L_straight)
+  shape.lineTo(W_out, L_straight)
   shape.lineTo(W_out, L_corner)
   shape.absarc(W_out - R_corner, W_out - R_corner, R_corner, 0, 0.5 * Math.PI, false)
   shape.lineTo(L_straight, W_out)
-  shape.bezierCurveTo(L_straight - offset_straight, W_out, r_port_outer, R_port - offset_port, r_port_outer, R_port)
+  shape.lineTo(r_port_outer, R_port)
   shape.absarc(0, R_port, r_port_outer, 0, Math.PI, false)
 
   // Top-Left Quadrant
-  shape.bezierCurveTo(-r_port_outer, R_port - offset_port, -L_straight + offset_straight, W_out, -L_straight, W_out)
+  shape.lineTo(-L_straight, W_out)
   shape.lineTo(-W_out + R_corner, W_out)
   shape.absarc(-W_out + R_corner, W_out - R_corner, R_corner, 0.5 * Math.PI, Math.PI, false)
   shape.lineTo(-W_out, L_straight)
-  shape.bezierCurveTo(-W_out, L_straight - offset_straight, -R_port + offset_port, r_port_outer, -R_port, r_port_outer)
+  shape.lineTo(-R_port, r_port_outer)
   shape.absarc(-R_port, 0, r_port_outer, 0.5 * Math.PI, 1.5 * Math.PI, false)
 
   // Bottom-Left Quadrant
-  shape.bezierCurveTo(-R_port + offset_port, -r_port_outer, -W_out, -L_straight + offset_straight, -W_out, -L_straight)
+  shape.lineTo(-W_out, -L_straight)
   shape.lineTo(-W_out, -L_corner)
   shape.absarc(-W_out + R_corner, -W_out + R_corner, R_corner, Math.PI, 1.5 * Math.PI, false)
   shape.lineTo(-L_straight, -W_out)
-  shape.bezierCurveTo(-L_straight + offset_straight, -W_out, -r_port_outer, -R_port + offset_port, -r_port_outer, -R_port)
+  shape.lineTo(-r_port_outer, -R_port)
   shape.absarc(0, -R_port, r_port_outer, Math.PI, 2 * Math.PI, false)
 
   // Bottom-Right Quadrant
-  shape.bezierCurveTo(r_port_outer, -R_port + offset_port, L_straight - offset_straight, -W_out, L_straight, -W_out)
+  shape.lineTo(L_straight, -W_out)
   shape.lineTo(W_out - R_corner, -W_out)
   shape.absarc(W_out - R_corner, -W_out + R_corner, R_corner, 1.5 * Math.PI, 2 * Math.PI, false)
   shape.lineTo(W_out, -L_straight)
-  shape.bezierCurveTo(W_out, -L_straight + offset_straight, R_port - offset_port, -r_port_outer, R_port, -r_port_outer)
+  shape.lineTo(R_port, -r_port_outer)
   shape.absarc(R_port, 0, r_port_outer, 1.5 * Math.PI, 2.5 * Math.PI, false)
   shape.closePath()
 
@@ -1225,12 +1289,13 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
 function _addPhotoCloverSealAt(parent, surfZ) {
   const side = surfZ >= 0 ? 1 : -1
   const mat = MaterialPresets.oRing()
-  const geo = new THREE.ExtrudeGeometry(_makeWavySealShape(22, 4.5, 3.4), {
+  const geo = new THREE.ExtrudeGeometry(_makeWavySealShape(24.6, 5.2, 2.0), {
     depth: 1.2,
     bevelEnabled: true,
     bevelThickness: 0.25,
     bevelSize: 0.25,
-    bevelSegments: 3
+    bevelSegments: 3,
+    curveSegments: 128
   })
   geo.translate(0, 0, -0.6)
   const seal = new THREE.Mesh(geo, mat)
@@ -1238,7 +1303,7 @@ function _addPhotoCloverSealAt(parent, surfZ) {
   parent.add(seal)
 
   const holeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.1, roughness: 0.9 })
-  const holeGeo = new THREE.CylinderGeometry(2.4, 2.4, 1.4, 18)
+  const holeGeo = new THREE.CylinderGeometry(2.4, 2.4, 1.4, 36)
   const holeR = 20.5
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const hole = new THREE.Mesh(holeGeo, holeMat)
@@ -1285,7 +1350,7 @@ function _addCloverOring(parent, gasketT) {
   }
   outer.holes.push(hole)
 
-  const geo = new THREE.ExtrudeGeometry(outer, { depth: 2.5, bevelEnabled: false })
+  const geo = new THREE.ExtrudeGeometry(outer, { depth: 2.5, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -1.25)
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.z = gasketT / 2
@@ -1320,7 +1385,7 @@ function _addBoltHoles(parent, thickness, count) {
   const holeMat = new THREE.MeshStandardMaterial({
     color: 0x101010, metalness: 0.1, roughness: 0.9
   })
-  const holeGeo = new THREE.CylinderGeometry(hR, hR, thickness * 1.1, 12)
+  const holeGeo = new THREE.CylinderGeometry(hR, hR, thickness * 1.1, 32)
 
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + Math.PI / count
@@ -1381,7 +1446,7 @@ function _addPlateBoltHoles(parent, plateT) {
   const holeMat = new THREE.MeshStandardMaterial({
     color: 0x101010, metalness: 0.1, roughness: 0.9
   })
-  const holeGeo = new THREE.CylinderGeometry(hR, hR, plateT * 1.1, 12)
+  const holeGeo = new THREE.CylinderGeometry(hR, hR, plateT * 1.1, 32)
 
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
@@ -1453,7 +1518,7 @@ function _addGasPorts(parent, portFaceZ) {
     sub.add(seal)
 
     const flange = new THREE.Mesh(
-      new THREE.CylinderGeometry(hexR + 1, hexR + 1, 2, 20), mat)
+      new THREE.CylinderGeometry(hexR + 1, hexR + 1, 2, 36), mat)
     flange.rotation.x = Math.PI / 2
     flange.position.z = portFaceZ + 1
     sub.add(flange)
@@ -1465,19 +1530,19 @@ function _addGasPorts(parent, portFaceZ) {
     sub.add(hex)
 
     const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(bodyR, bodyR, bodyH, 16), mat)
+      new THREE.CylinderGeometry(bodyR, bodyR, bodyH, 36), mat)
     tube.rotation.x = Math.PI / 2
     tube.position.z = portFaceZ + 5 + bodyH / 2
     sub.add(tube)
 
     const bore = new THREE.Mesh(
-      new THREE.CylinderGeometry(bodyR * 0.62, bodyR * 0.62, 0.45, 16), boreMat)
+      new THREE.CylinderGeometry(bodyR * 0.62, bodyR * 0.62, 0.45, 36), boreMat)
     bore.rotation.x = Math.PI / 2
     bore.position.z = portFaceZ + 5 + bodyH + 2.25
     sub.add(bore)
 
     // Stainless steel cap
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(bodyR + 0.5, bodyR + 0.5, 2, 16), mat)
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(bodyR + 0.5, bodyR + 0.5, 2, 36), mat)
     cap.rotation.x = Math.PI / 2
     cap.position.z = portFaceZ + 5 + bodyH + 1
     sub.add(cap)
@@ -1558,12 +1623,12 @@ function _makeBolts(z) {
   const rodCenterZ = bottomFace + rodLen / 2
 
   const shaftMat = MaterialPresets.boltShaft()
-  const shaftGeo = new THREE.CylinderGeometry(bCfg.diameter / 2, bCfg.diameter / 2, rodLen, 14)
+  const shaftGeo = new THREE.CylinderGeometry(bCfg.diameter / 2, bCfg.diameter / 2, rodLen, 32)
 
   const threadLen = protrude + 3
   const threadMat = MaterialPresets.bolt()
   const threadGeo = new THREE.CylinderGeometry(
-    bCfg.diameter / 2 + 0.15, bCfg.diameter / 2 + 0.15, threadLen, 14)
+    bCfg.diameter / 2 + 0.15, bCfg.diameter / 2 + 0.15, threadLen, 32)
   const topFace = z.topCover + coverT / 2
   const threadCenterZ = topFace - 2 + threadLen / 2
 
@@ -1658,8 +1723,8 @@ function _makeFlatWashers(z) {
   group.userData.layer = 'flatWashers'
 
   const mat = MaterialPresets.nut()
-  const wasGeo = new THREE.CylinderGeometry(wCfg.od / 2, wCfg.od / 2, wCfg.thickness, 20)
-  const holeGeo = new THREE.CylinderGeometry(wCfg.id / 2, wCfg.id / 2, wCfg.thickness * 1.1, 14)
+  const wasGeo = new THREE.CylinderGeometry(wCfg.od / 2, wCfg.od / 2, wCfg.thickness, 36)
+  const holeGeo = new THREE.CylinderGeometry(wCfg.id / 2, wCfg.id / 2, wCfg.thickness * 1.1, 32)
   const holeMat = new THREE.MeshStandardMaterial({
     color: 0x101010, metalness: 0.1, roughness: 0.9
   })
