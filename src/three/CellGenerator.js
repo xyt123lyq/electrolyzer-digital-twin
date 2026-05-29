@@ -1274,6 +1274,16 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   return shape
 }
 
+function _makeSurfaceHoleMaterial(color) {
+  return new THREE.MeshBasicMaterial({
+    color,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1
+  })
+}
+
 function _addPhotoCloverSealAt(parent, surfZ) {
   const side = surfZ >= 0 ? 1 : -1
   const mat = MaterialPresets.oRing()
@@ -1290,13 +1300,12 @@ function _addPhotoCloverSealAt(parent, surfZ) {
   seal.position.z = surfZ + side * 0.72
   parent.add(seal)
 
-  const holeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.1, roughness: 0.9 })
-  const holeGeo = new THREE.CylinderGeometry(2.4, 2.4, 1.4, 36)
+  const holeMat = _makeSurfaceHoleMaterial(0x111111)
+  const holeGeo = new THREE.CircleGeometry(2.4, 36)
   const holeR = 20.5
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const hole = new THREE.Mesh(holeGeo, holeMat)
-    hole.rotation.x = Math.PI / 2
-    hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, seal.position.z + side * 0.05)
+    hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, seal.position.z + side * 0.18)
     parent.add(hole)
   }
 }
@@ -1370,19 +1379,19 @@ function _addBoltHoles(parent, thickness, count) {
   const pcdR = c.bolt.pcd / 2
   const hR = c.bolt.diameter / 2
 
-  const holeMat = new THREE.MeshStandardMaterial({
-    color: 0x101010, metalness: 0.1, roughness: 0.9
-  })
-  const holeGeo = new THREE.CylinderGeometry(hR, hR, thickness * 1.1, 32)
+  const holeMat = _makeSurfaceHoleMaterial(0x101010)
+  const holeGeo = new THREE.CircleGeometry(hR, 32)
 
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + Math.PI / count
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
-    const hole = new THREE.Mesh(holeGeo, holeMat)
-    hole.rotation.x = Math.PI / 2
-    hole.position.set(x, y, 0)
-    parent.add(hole)
+    for (const surfZ of [thickness / 2, -thickness / 2]) {
+      const side = surfZ >= 0 ? 1 : -1
+      const hole = new THREE.Mesh(holeGeo, holeMat)
+      hole.position.set(x, y, surfZ + side * 0.04)
+      parent.add(hole)
+    }
   }
 }
 
@@ -1431,19 +1440,19 @@ function _addPlateBoltHoles(parent, plateT) {
   const pcdR = c.bolt.pcd / 2
   const hR = c.bolt.diameter / 2
 
-  const holeMat = new THREE.MeshStandardMaterial({
-    color: 0x101010, metalness: 0.1, roughness: 0.9
-  })
-  const holeGeo = new THREE.CylinderGeometry(hR, hR, plateT * 1.1, 32)
+  const holeMat = _makeSurfaceHoleMaterial(0x101010)
+  const holeGeo = new THREE.CircleGeometry(hR, 32)
 
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
     const x = Math.cos(angle) * pcdR
     const y = Math.sin(angle) * pcdR
-    const hole = new THREE.Mesh(holeGeo, holeMat)
-    hole.rotation.x = Math.PI / 2
-    hole.position.set(x, y, 0)
-    parent.add(hole)
+    for (const surfZ of [plateT / 2, -plateT / 2]) {
+      const side = surfZ >= 0 ? 1 : -1
+      const hole = new THREE.Mesh(holeGeo, holeMat)
+      hole.position.set(x, y, surfZ + side * 0.04)
+      parent.add(hole)
+    }
   }
 }
 
