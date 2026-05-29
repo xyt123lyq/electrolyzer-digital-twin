@@ -75,8 +75,8 @@ export const MaterialPresets = {
       envMapIntensity: 0.8,
       clearcoat: 0.1,           // Slight protective sheen
       clearcoatRoughness: 0.4,
-      transmission: 0.12,       // Subtle edge translucency
-      thickness: 2.0,           // Simulates physical edge refraction
+      transmission: 0.0,       // Subtle edge translucency
+      thickness: 0.0,           // Simulates physical edge refraction
       ior: 1.48
     })
   },
@@ -90,8 +90,8 @@ export const MaterialPresets = {
       envMapIntensity: 0.8,
       clearcoat: 0.1,
       clearcoatRoughness: 0.4,
-      transmission: 0.08,        // Slightly less transmission for thinner sheets
-      thickness: 0.8,
+      transmission: 0.0,        // Slightly less transmission for thinner sheets
+      thickness: 0.0,
       ior: 1.48
     })
   },

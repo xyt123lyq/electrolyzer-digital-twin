@@ -375,7 +375,7 @@ function _makeWhiteGasketWithPattern(name, zPos) {
     shape.holes.push(holePath)
   }
 
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: T - 0.3, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 3, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
   const body = new THREE.Mesh(geo, mat)
   body.castShadow = true
@@ -420,7 +420,7 @@ function _makeWhiteGasketWithPatternBottom(name, zPos) {
     shape.holes.push(holePath)
   }
 
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: T - 0.3, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 3, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
   const body = new THREE.Mesh(geo, mat)
   body.castShadow = true
@@ -763,7 +763,7 @@ function _makeThinWhite(name, zPos) {
   window.closePath()
   shape.holes.push(window)
 
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: T - 0.3, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 3, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
   const disc = new THREE.Mesh(geo, mat)
   group.add(disc)
@@ -1278,9 +1278,8 @@ function _makeSurfaceHoleMaterial(color, side = THREE.FrontSide) {
   return new THREE.MeshBasicMaterial({
     color,
     side,
-    transparent: true,
-    opacity: 0.96,
-    depthWrite: false,
+    transparent: false,
+    depthWrite: false, // 核心安全项：防深度写入污染，避免与螺栓穿透几何发生阴影图元Z-fighting
     depthTest: true,
     polygonOffset: true,
     polygonOffsetFactor: -1,

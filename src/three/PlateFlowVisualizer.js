@@ -212,8 +212,8 @@ export class PlateFlowVisualizer {
             baseSize = baseSize * (1.0 + pow(bubbleProgress, 2.0) * 1.8);
           }
           
-          // 基于相机深度微调粒子尺寸，增加立体感
-          gl_PointSize = baseSize * (300.0 / -mvPos.z);
+          // 基于相机深度微调粒子尺寸，增加立体感。同时限制最大与最小值，防止除以 0、负数或粒子贴近相机时尺寸爆炸导致渲染出黑色方块。
+          gl_PointSize = clamp(baseSize * (300.0 / max(1.0, -mvPos.z)), 1.0, 64.0);
           
           // 计算粒子边缘渐变透明度 (防止在端部进出口处瞬间消失/闪烁)
           float endFade = sin(progress * 3.14159);

@@ -81,7 +81,7 @@ export class ElectrolyzerScene {
 
     if (this._profile.shadows) {
       this.renderer.shadowMap.enabled = true
-      this.renderer.shadowMap.type = THREE.PCFShadowMap
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
     }
 
     this.container.appendChild(this.renderer.domElement)
@@ -130,8 +130,8 @@ export class ElectrolyzerScene {
       key.shadow.camera.right = 180
       key.shadow.camera.top = 180
       key.shadow.camera.bottom = -180
-      key.shadow.bias = -0.0005
-      key.shadow.normalBias = 0.02
+      key.shadow.bias = 0.02
+      key.shadow.normalBias = 1.8
     }
     this.scene.add(key)
 
