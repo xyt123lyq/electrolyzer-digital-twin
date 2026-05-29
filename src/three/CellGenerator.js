@@ -969,20 +969,6 @@ function _addFlowChannelGroove(parent, surfZ) {
     roughness: 0.55
   })
 
-  // Recess frame border rim inside the pocket
-  const rimW = 0.75
-  const rimZ = grooveFaceZ + side * 0.06
-  for (const b of [
-    { w: grooveSize + 1.4, h: rimW, x: 0, y: grooveSize / 2 + rimW / 2 },
-    { w: grooveSize + 1.4, h: rimW, x: 0, y: -grooveSize / 2 - rimW / 2 },
-    { w: rimW, h: grooveSize + 1.4, x: -grooveSize / 2 - rimW / 2, y: 0 },
-    { w: rimW, h: grooveSize + 1.4, x: grooveSize / 2 + rimW / 2, y: 0 }
-  ]) {
-    const rim = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, 0.12), channelMat)
-    rim.position.set(b.x, b.y, rimZ)
-    parent.add(rim)
-  }
-
   // 11 Curved Flow Channels perfectly matching PlateFlowVisualizer.js
   const laneCount = 11
   const laneSpacing = grooveSize / (laneCount + 1)
@@ -1102,9 +1088,11 @@ function _makeExpandedMesh(name, zPos) {
   const halfD = diamondSize / 2
 
   const lineMat = new THREE.MeshStandardMaterial({
-    color: 0x505050,
-    metalness: 0.85,
-    roughness: 0.35,
+    color: 0x8a8f95,
+    metalness: 0.72,
+    roughness: 0.42,
+    emissive: 0x1f252b,
+    emissiveIntensity: 0.08,
     side: THREE.DoubleSide
   })
 
