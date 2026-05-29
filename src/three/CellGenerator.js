@@ -89,9 +89,12 @@ function _layerZ(c) {
   const nH  = c.bolt.nutHeight       // 4
 
   // Symmetric stack around Z = 0
-  const mea3 = 0
-  const mea4 = 0
   const mesh1 = 0
+  // Two membrane sheets should sit on both sides of the central mesh,
+  // instead of fully overlapping at z = 0.
+  const meaGap = 0.9
+  const mea3 = meaGap / 2
+  const mea4 = -meaGap / 2
   
   const thinWhite1 = 0.7
   const thinWhite2 = -0.7
