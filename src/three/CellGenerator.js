@@ -249,7 +249,7 @@ function _makePhotoCoverShape(radius, earExtend, earHalfH) {
   const ey = earHalfH
   const joinA = Math.asin(ey / radius)
   const xJoin = Math.cos(joinA) * radius
-  const cornerR = Math.min(4.8, earHalfH * 0.55)
+  const cornerR = Math.min(5.2, earHalfH * 0.58)
 
   shape.moveTo(xJoin, -ey)
   shape.lineTo(ex - cornerR, -ey)
@@ -257,13 +257,7 @@ function _makePhotoCoverShape(radius, earExtend, earHalfH) {
   shape.lineTo(ex, ey - cornerR)
   shape.quadraticCurveTo(ex, ey, ex - cornerR, ey)
   shape.lineTo(xJoin, ey)
-  shape.absarc(0, 0, radius, joinA, Math.PI - joinA, false)
-  shape.lineTo(-ex + cornerR, ey)
-  shape.quadraticCurveTo(-ex, ey, -ex, ey - cornerR)
-  shape.lineTo(-ex, -ey + cornerR)
-  shape.quadraticCurveTo(-ex, -ey, -ex + cornerR, -ey)
-  shape.lineTo(-xJoin, -ey)
-  shape.absarc(0, 0, radius, Math.PI + joinA, Math.PI * 2 - joinA, false)
+  shape.absarc(0, 0, radius, joinA, Math.PI * 2 - joinA, false)
   shape.closePath()
   return shape
 }

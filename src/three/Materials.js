@@ -41,17 +41,17 @@ export const MaterialPresets = {
   // BOM #5/#11 紫铜端盖 — 实物: 暖玫瑰金, 磨砂/缎面质感
   endplate() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xc78667,
-      metalness: 0.82,
-      roughness: 0.50,
-      envMapIntensity: 1.15,
-      clearcoat: 0.12,
-      clearcoatRoughness: 0.34,
+      color: 0xd2a08c,
+      metalness: 0.72,
+      roughness: 0.60,
+      envMapIntensity: 0.9,
+      clearcoat: 0.06,
+      clearcoatRoughness: 0.55,
       emissive: 0x100504,
-      emissiveIntensity: 0.04,
-      sheen: 0.1,
+      emissiveIntensity: 0.025,
+      sheen: 0.16,
       sheenColor: new THREE.Color(0xffe4d4),
-      sheenRoughness: 0.4
+      sheenRoughness: 0.55
     })
   },
 
