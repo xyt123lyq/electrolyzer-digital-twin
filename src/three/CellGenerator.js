@@ -246,18 +246,21 @@ function _makeSingleEarCoverShape(radius, earExtend, earHalfH) {
 function _makePhotoCoverShape(radius, earExtend, earHalfH) {
   const shape = new THREE.Shape()
   const ex = radius + earExtend
-  const ey = earHalfH
-  const joinA = Math.asin(ey / radius)
-  const xJoin = Math.cos(joinA) * radius
-  const cornerR = Math.min(5.2, earHalfH * 0.58)
+  const topY = earHalfH * 1.15
+  const bottomY = -earHalfH * 1.75
+  const xTop = Math.sqrt(Math.max(0, radius * radius - topY * topY))
+  const xBottom = Math.sqrt(Math.max(0, radius * radius - bottomY * bottomY))
+  const topA = Math.atan2(topY, xTop)
+  const bottomA = Math.atan2(bottomY, xBottom)
+  const cornerR = Math.min(4.2, earHalfH * 0.45)
 
-  shape.moveTo(xJoin, -ey)
-  shape.lineTo(ex - cornerR, -ey)
-  shape.quadraticCurveTo(ex, -ey, ex, -ey + cornerR)
-  shape.lineTo(ex, ey - cornerR)
-  shape.quadraticCurveTo(ex, ey, ex - cornerR, ey)
-  shape.lineTo(xJoin, ey)
-  shape.absarc(0, 0, radius, joinA, Math.PI * 2 - joinA, false)
+  shape.moveTo(xBottom, bottomY)
+  shape.lineTo(ex - cornerR, bottomY)
+  shape.quadraticCurveTo(ex, bottomY, ex, bottomY + cornerR)
+  shape.lineTo(ex, topY - cornerR)
+  shape.quadraticCurveTo(ex, topY, ex - cornerR, topY)
+  shape.lineTo(xTop, topY)
+  shape.absarc(0, 0, radius, topA, bottomA, false)
   shape.closePath()
   return shape
 }
