@@ -243,16 +243,6 @@ function _makeCircleShape(radius) {
   return shape
 }
 
-function _addBoltHolePaths(shape, count, holeRadius = CELL_CONFIG.bolt.diameter / 2) {
-  const pcdR = CELL_CONFIG.bolt.pcd / 2
-  for (let i = 0; i < count; i++) {
-    const angle = (i / count) * Math.PI * 2 + Math.PI / count
-    const hole = new THREE.Path()
-    hole.absarc(Math.cos(angle) * pcdR, Math.sin(angle) * pcdR, holeRadius, 0, Math.PI * 2, true)
-    shape.holes.push(hole)
-  }
-}
-
 // 带侧耳的圆形端盖形状生成 (左右各一个半圆耳)
 function _makeCoverShape(radius, earExtend, earHalfH) {
   // Main disc arc + two rectangular ears on left/right
@@ -329,7 +319,6 @@ function _makePinkCover(name, isTop, zPos) {
   const mat = MaterialPresets.endplate()
 
   const shape = _makePhotoCoverShape(radius, earExtend, earWidthY)
-  _addBoltHolePaths(shape, 8)
   const geo = new THREE.ExtrudeGeometry(shape, {
     depth: T,
     bevelEnabled: true,
@@ -345,6 +334,7 @@ function _makePinkCover(name, isTop, zPos) {
   body.receiveShadow = true
   group.add(body)
 
+  _addBoltHoles(group, T, 8)
   _addCoverHoleChamfers(group, T / 2, 8)
   _addCoverHoleChamfers(group, -T / 2, 8)
   _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
@@ -384,7 +374,6 @@ function _makeWhiteGasketWithPattern(name, zPos) {
     holePath.absarc(px, py, holeRadius, 0, Math.PI * 2, true)
     shape.holes.push(holePath)
   }
-  _addBoltHolePaths(shape, 12)
 
   const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
@@ -396,6 +385,7 @@ function _makeWhiteGasketWithPattern(name, zPos) {
   // _addGasketPattern(group, -T / 2, false)
 
   // 修改为12个外侧螺栓孔以完全对齐实物！
+  _addBoltHoles(group, T, 12)
   _addPhotoCloverSealAt(group, T / 2)
   _addPhotoCloverSealAt(group, -T / 2)
 
@@ -429,7 +419,6 @@ function _makeWhiteGasketWithPatternBottom(name, zPos) {
     holePath.absarc(px, py, holeRadius, 0, Math.PI * 2, true)
     shape.holes.push(holePath)
   }
-  _addBoltHolePaths(shape, 12)
 
   const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
@@ -439,6 +428,7 @@ function _makeWhiteGasketWithPatternBottom(name, zPos) {
 
   // _addGasketPattern(group, T / 2, true)
   // 修改为12个外侧螺栓孔以完全对齐实物！
+  _addBoltHoles(group, T, 12)
   _addPhotoCloverSealAt(group, T / 2)
 
   group.position.z = zPos
@@ -576,7 +566,6 @@ function _makeBackingPlateShape(R, lugDir = 0) {
     portHole.absarc(px, py, 2.0, 0, Math.PI * 2, true)
     shape.holes.push(portHole)
   }
-  _addBoltHolePaths(shape, 8)
   return shape
 }
 
@@ -597,7 +586,6 @@ function _makeFacePlateShape(R) {
   const bottomPort = new THREE.Path()
   bottomPort.absarc(0, -24.0, 2.5, 0, Math.PI * 2, true)
   shape.holes.push(bottomPort)
-  _addBoltHolePaths(shape, 8)
   
   return shape
 }
@@ -635,6 +623,7 @@ function _makeAnodePlate(name, zPos) {
   _addPlateBlackGasket(group, -T / 2)
   _addFlowChannelGroove(group, -T / 2)
 
+  _addPlateBoltHoles(group, T)
   _addMountingLugChamfer(group, R, T, true)
 
   group.position.z = zPos
@@ -682,6 +671,7 @@ function _makeCathodePlate(name, zPos) {
   meshGroup.position.z = +T / 2 - 0.12 // Sunken below the plate flat surface!
   group.add(meshGroup)
 
+  _addPlateBoltHoles(group, T)
   _addMountingLugChamfer(group, R, T, false)
 
   group.position.z = zPos
@@ -772,7 +762,6 @@ function _makeThinWhite(name, zPos) {
   window.lineTo(-windowSize, windowSize)
   window.closePath()
   shape.holes.push(window)
-  _addBoltHolePaths(shape, 8)
 
   const geo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
@@ -786,6 +775,8 @@ function _makeThinWhite(name, zPos) {
   // 方形O-ring围绕方窗
   _addThinWhiteWindowPattern(group, windowSize, T / 2)
   _addThinWhiteWindowPattern(group, windowSize, -T / 2)
+
+  _addBoltHoles(group, T, 8)
 
   group.position.z = zPos
   return group
@@ -1298,6 +1289,16 @@ function _addPhotoCloverSealAt(parent, surfZ) {
   const seal = new THREE.Mesh(geo, mat)
   seal.position.z = surfZ + side * 0.72
   parent.add(seal)
+
+  const holeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.1, roughness: 0.9 })
+  const holeGeo = new THREE.CylinderGeometry(2.4, 2.4, 1.4, 36)
+  const holeR = 20.5
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const hole = new THREE.Mesh(holeGeo, holeMat)
+    hole.rotation.x = Math.PI / 2
+    hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, seal.position.z + side * 0.05)
+    parent.add(hole)
+  }
 }
 
 function _addPhotoCloverSeal(parent, gasketT) {
@@ -1364,6 +1365,27 @@ function _addBrushedDiscLines(parent, radius, z, color = 0xbfc4c8) {
   }
 }
 
+function _addBoltHoles(parent, thickness, count) {
+  const c = CELL_CONFIG
+  const pcdR = c.bolt.pcd / 2
+  const hR = c.bolt.diameter / 2
+
+  const holeMat = new THREE.MeshStandardMaterial({
+    color: 0x101010, metalness: 0.1, roughness: 0.9
+  })
+  const holeGeo = new THREE.CylinderGeometry(hR, hR, thickness * 1.1, 32)
+
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2 + Math.PI / count
+    const x = Math.cos(angle) * pcdR
+    const y = Math.sin(angle) * pcdR
+    const hole = new THREE.Mesh(holeGeo, holeMat)
+    hole.rotation.x = Math.PI / 2
+    hole.position.set(x, y, 0)
+    parent.add(hole)
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 极板螺栓孔
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1401,6 +1423,27 @@ function _addCoverHoleChamfers(parent, surfZ, count) {
     const stain = new THREE.Mesh(stainGeo, stainMat)
     stain.position.set(x, y, surfZ + side * 0.18)
     parent.add(stain)
+  }
+}
+
+function _addPlateBoltHoles(parent, plateT) {
+  const c = CELL_CONFIG
+  const pcdR = c.bolt.pcd / 2
+  const hR = c.bolt.diameter / 2
+
+  const holeMat = new THREE.MeshStandardMaterial({
+    color: 0x101010, metalness: 0.1, roughness: 0.9
+  })
+  const holeGeo = new THREE.CylinderGeometry(hR, hR, plateT * 1.1, 32)
+
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
+    const x = Math.cos(angle) * pcdR
+    const y = Math.sin(angle) * pcdR
+    const hole = new THREE.Mesh(holeGeo, holeMat)
+    hole.rotation.x = Math.PI / 2
+    hole.position.set(x, y, 0)
+    parent.add(hole)
   }
 }
 
