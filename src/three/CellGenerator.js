@@ -1772,6 +1772,24 @@ function _makeBolts(z) {
   const topFace = z.topCover + coverT / 2
   const threadCenterZ = topFace - 2 + threadLen / 2
 
+  // Hexagonal bolt head parameters (bottom hex heads)
+  const hexAF = bCfg.nutAF // 8.0 mm
+  const circumR = (hexAF / 2) / Math.cos(Math.PI / 6)
+  const hexShape = new THREE.Shape()
+  for (let j = 0; j < 6; j++) {
+    const a = (j / 6) * Math.PI * 2
+    const hx = Math.cos(a) * circumR
+    const hy = Math.sin(a) * circumR
+    if (j === 0) hexShape.moveTo(hx, hy)
+    else hexShape.lineTo(hx, hy)
+  }
+  hexShape.closePath()
+  const hexHeadGeo = new THREE.ExtrudeGeometry(hexShape, {
+    depth: bCfg.nutHeight, bevelEnabled: false
+  })
+  hexHeadGeo.translate(0, 0, -bCfg.nutHeight / 2)
+  const headMat = MaterialPresets.nut() // steel metallic material for the hex head
+
   for (let i = 0; i < bCfg.count; i++) {
     const angle = (i / bCfg.count) * Math.PI * 2 + Math.PI / bCfg.count
     const x = Math.cos(angle) * pcdR
@@ -1787,6 +1805,12 @@ function _makeBolts(z) {
     thread.rotation.x = Math.PI / 2
     thread.position.set(x, y, threadCenterZ)
     group.add(thread)
+
+    // Add a hexagonal bolt head inside the bottom plate's recess
+    const head = new THREE.Mesh(hexHeadGeo, headMat)
+    head.position.set(x, y, bottomFace + bCfg.nutHeight / 2)
+    head.castShadow = true
+    group.add(head)
 
     for (let j = 0; j < 12; j++) {
       const ring = new THREE.Mesh(

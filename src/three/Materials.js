@@ -14,15 +14,15 @@ export const MaterialPresets = {
     })
   },
 
-  // 螺柱轴身 — 实物: 不锈钢外露螺纹
+  // 螺柱轴身 — 实物: 黑色绝缘热缩套管 (Insulated shrink sleeve)
   boltShaft() {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xb8bcc0,
-      metalness: 0.92,
-      roughness: 0.24,
-      envMapIntensity: 1.4,
-      clearcoat: 0.22,
-      clearcoatRoughness: 0.22
+      color: 0x181a1c,
+      metalness: 0.05,
+      roughness: 0.72,
+      envMapIntensity: 0.5,
+      clearcoat: 0.05,
+      clearcoatRoughness: 0.5
     })
   },
 
