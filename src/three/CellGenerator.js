@@ -347,7 +347,7 @@ function _makePinkCover(name, isTop, zPos) {
     _addHexSocketPlug(group, 0, -22, T / 2 + 0.6)
   } else {
     // ─────────────────────────────────────────────────────────────────────────────
-    // BOTTOM COVER: Precise dual-layer stack for hex recesses & blind alignment holes
+    // BOTTOM COVER: High-fidelity outer beveled frame + stacked flat core (No Seams!)
     // ─────────────────────────────────────────────────────────────────────────────
     const pcdR = c.bolt.pcd / 2
     const hR = c.bolt.diameter / 2
@@ -357,9 +357,31 @@ function _makePinkCover(name, isTop, zPos) {
     const recessDepth = 4.0
     const frontT = T - recessDepth // 10.0mm
     const backT = recessDepth      // 4.0mm
+    const cutoutR = 43.5
+    const coreR = 43.6 // slight overlap to prevent any gaps
 
-    // 1. FRONT SUB-LAYER: 10mm. Cuts out 8 circular bolt holes + 2 alignment holes
-    const shapeFront = _makePhotoCoverShape(radius, earExtend, earWidthY)
+    // 1. OUTER BEVELED FRAME: Full 14mm thick side wrapper with a circular cutout
+    const shapeFrame = _makePhotoCoverShape(radius, earExtend, earWidthY)
+    const frameHole = new THREE.Path()
+    frameHole.absarc(0, 0, cutoutR, 0, Math.PI * 2, true)
+    shapeFrame.holes.push(frameHole)
+
+    const geoFrame = new THREE.ExtrudeGeometry(shapeFrame, {
+      depth: T,
+      bevelEnabled: true,
+      bevelThickness: 0.45,
+      bevelSize: 0.75,
+      bevelSegments: 3,
+      curveSegments: 128
+    })
+    geoFrame.translate(0, 0, -T / 2)
+    const frameMesh = new THREE.Mesh(geoFrame, mat)
+    frameMesh.castShadow = true
+    frameMesh.receiveShadow = true
+    group.add(frameMesh)
+
+    // 2. FRONT INNER CORE: 10mm thick, flat side (no bevels), cuts out 8 circular holes + 2 alignment holes
+    const shapeFront = _makeCircleShape(coreR)
 
     // Cutout 8 circular bolt holes
     for (let i = 0; i < 8; i++) {
@@ -383,10 +405,7 @@ function _makePinkCover(name, isTop, zPos) {
 
     const geoFront = new THREE.ExtrudeGeometry(shapeFront, {
       depth: frontT,
-      bevelEnabled: true,
-      bevelThickness: 0.35,
-      bevelSize: 0.55,
-      bevelSegments: 3,
+      bevelEnabled: false,
       curveSegments: 128
     })
     geoFront.translate(0, 0, -T / 2 + backT)
@@ -396,8 +415,8 @@ function _makePinkCover(name, isTop, zPos) {
     frontMesh.receiveShadow = true
     group.add(frontMesh)
 
-    // 2. BACK SUB-LAYER: 4mm. Cuts out 8 hexagonal bolt recesses (no alignment holes)
-    const shapeBack = _makePhotoCoverShape(radius, earExtend, earWidthY)
+    // 3. BACK INNER CORE: 4mm thick, flat side (no bevels), cuts out 8 hexagonal bolt recesses
+    const shapeBack = _makeCircleShape(coreR)
 
     // Cutout 8 hexagonal bolt recesses
     for (let i = 0; i < 8; i++) {
@@ -419,10 +438,7 @@ function _makePinkCover(name, isTop, zPos) {
 
     const geoBack = new THREE.ExtrudeGeometry(shapeBack, {
       depth: backT,
-      bevelEnabled: true,
-      bevelThickness: 0.25,
-      bevelSize: 0.45,
-      bevelSegments: 3,
+      bevelEnabled: false,
       curveSegments: 128
     })
     geoBack.translate(0, 0, -T / 2)
@@ -432,7 +448,7 @@ function _makePinkCover(name, isTop, zPos) {
     backMesh.receiveShadow = true
     group.add(backMesh)
 
-    // 3. DECORATIONS: Add 8 bolt chamfer rings + 2 alignment chamfer rings on the front face (Z = T/2)
+    // 4. DECORATIONS: Add 8 bolt chamfer rings + 2 alignment chamfer rings on the front face (Z = T/2)
     _addCoverHoleChamfers(group, T / 2, 8)
 
     const ringMat = new THREE.MeshPhysicalMaterial({
