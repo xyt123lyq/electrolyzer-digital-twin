@@ -92,9 +92,9 @@ class CsvRecorder {
     const fileExists = fs.existsSync(this.currentFilePath)
     let writeStr = ''
 
-    // 如果是新创建的文件，第一行先写入标准的表头
+    // 如果是新创建的文件，第一行先写入标准的表头（加 BOM \ufeff 保证 Excel/WPS 打开不乱码）
     if (!fileExists) {
-      writeStr += COLUMNS.map(c => c.header).join(',') + '\n'
+      writeStr += '\ufeff' + COLUMNS.map(c => c.header).join(',') + '\n'
     }
 
     // 拼装单行 CSV 数据
