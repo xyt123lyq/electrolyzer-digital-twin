@@ -318,30 +318,141 @@ function _makePinkCover(name, isTop, zPos) {
 
   const mat = MaterialPresets.endplate()
 
-  const shape = _makePhotoCoverShape(radius, earExtend, earWidthY)
-  const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: T,
-    bevelEnabled: true,
-    bevelThickness: 0.45,
-    bevelSize: 0.75,
-    bevelSegments: 3,
-    curveSegments: 128
-  })
-  geo.translate(0, 0, -T / 2)
-
-  const body = new THREE.Mesh(geo, mat)
-  body.castShadow = true
-  body.receiveShadow = true
-  group.add(body)
-
-  _addBoltHoles(group, T, 8)
-  _addCoverHoleChamfers(group, T / 2, 8)
-  _addCoverHoleChamfers(group, -T / 2, 8)
-  _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
-
   if (isTop) {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TOP COVER: Original simple extrusion with through holes
+    // ─────────────────────────────────────────────────────────────────────────────
+    const shape = _makePhotoCoverShape(radius, earExtend, earWidthY)
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: T,
+      bevelEnabled: true,
+      bevelThickness: 0.45,
+      bevelSize: 0.75,
+      bevelSegments: 3,
+      curveSegments: 128
+    })
+    geo.translate(0, 0, -T / 2)
+
+    const body = new THREE.Mesh(geo, mat)
+    body.castShadow = true
+    body.receiveShadow = true
+    group.add(body)
+
+    _addBoltHoles(group, T, 8)
+    _addCoverHoleChamfers(group, T / 2, 8)
+    _addCoverHoleChamfers(group, -T / 2, 8)
+    _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
+
     _addGasPorts(group, T / 2)
     _addHexSocketPlug(group, 0, -22, T / 2 + 1.8)
+  } else {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // BOTTOM COVER: Precise dual-layer stack for hex recesses & blind alignment holes
+    // ─────────────────────────────────────────────────────────────────────────────
+    const pcdR = c.bolt.pcd / 2
+    const hR = c.bolt.diameter / 2
+    const hexAF = 8.5 // nut AF is 8.0, 8.5 provides clearance
+    const hexRadius = (hexAF / 2) / Math.cos(Math.PI / 6)
+
+    const recessDepth = 4.0
+    const frontT = T - recessDepth // 10.0mm
+    const backT = recessDepth      // 4.0mm
+
+    // 1. FRONT SUB-LAYER: 10mm. Cuts out 8 circular bolt holes + 2 alignment holes
+    const shapeFront = _makePhotoCoverShape(radius, earExtend, earWidthY)
+
+    // Cutout 8 circular bolt holes
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
+      const px = Math.cos(angle) * pcdR
+      const py = Math.sin(angle) * pcdR
+      const boltHole = new THREE.Path()
+      boltHole.absarc(px, py, hR, 0, Math.PI * 2, true)
+      shapeFront.holes.push(boltHole)
+    }
+
+    // Cutout 2 circular alignment holes (Blind holes on front only, at 45° and 225°)
+    const alignAngles = [Math.PI / 4, Math.PI * 1.25]
+    for (const angle of alignAngles) {
+      const px = Math.cos(angle) * pcdR
+      const py = Math.sin(angle) * pcdR
+      const alignHole = new THREE.Path()
+      alignHole.absarc(px, py, hR, 0, Math.PI * 2, true)
+      shapeFront.holes.push(alignHole)
+    }
+
+    const geoFront = new THREE.ExtrudeGeometry(shapeFront, {
+      depth: frontT,
+      bevelEnabled: true,
+      bevelThickness: 0.35,
+      bevelSize: 0.55,
+      bevelSegments: 3,
+      curveSegments: 128
+    })
+    geoFront.translate(0, 0, -T / 2 + backT)
+
+    const frontMesh = new THREE.Mesh(geoFront, mat)
+    frontMesh.castShadow = true
+    frontMesh.receiveShadow = true
+    group.add(frontMesh)
+
+    // 2. BACK SUB-LAYER: 4mm. Cuts out 8 hexagonal bolt recesses (no alignment holes)
+    const shapeBack = _makePhotoCoverShape(radius, earExtend, earWidthY)
+
+    // Cutout 8 hexagonal bolt recesses
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
+      const px = Math.cos(angle) * pcdR
+      const py = Math.sin(angle) * pcdR
+
+      const hexPath = new THREE.Path()
+      for (let j = 0; j < 6; j++) {
+        const a = (j / 6) * Math.PI * 2
+        const hx = px + Math.cos(a) * hexRadius
+        const hy = py + Math.sin(a) * hexRadius
+        if (j === 0) hexPath.moveTo(hx, hy)
+        else hexPath.lineTo(hx, hy)
+      }
+      hexPath.closePath()
+      shapeBack.holes.push(hexPath)
+    }
+
+    const geoBack = new THREE.ExtrudeGeometry(shapeBack, {
+      depth: backT,
+      bevelEnabled: true,
+      bevelThickness: 0.25,
+      bevelSize: 0.45,
+      bevelSegments: 3,
+      curveSegments: 128
+    })
+    geoBack.translate(0, 0, -T / 2)
+
+    const backMesh = new THREE.Mesh(geoBack, mat)
+    backMesh.castShadow = true
+    backMesh.receiveShadow = true
+    group.add(backMesh)
+
+    // 3. DECORATIONS: Add 8 bolt chamfer rings + 2 alignment chamfer rings on the front face (Z = T/2)
+    _addCoverHoleChamfers(group, T / 2, 8)
+
+    const ringMat = new THREE.MeshPhysicalMaterial({
+      color: 0xb8bec3,
+      metalness: 0.88,
+      roughness: 0.24,
+      envMapIntensity: 1.5,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.2
+    })
+    const ringGeo = new THREE.TorusGeometry(hR + 1.35, 0.28, 8, 28)
+    for (const angle of alignAngles) {
+      const x = Math.cos(angle) * pcdR
+      const y = Math.sin(angle) * pcdR
+      const ring = new THREE.Mesh(ringGeo, ringMat)
+      ring.position.set(x, y, T / 2 + 0.16)
+      group.add(ring)
+    }
+
+    _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
   }
 
   group.position.z = zPos
