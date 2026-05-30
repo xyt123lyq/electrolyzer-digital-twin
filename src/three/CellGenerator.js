@@ -365,7 +365,7 @@ function _makeWhiteGasketWithPattern(name, zPos) {
   const shape = _makeCircleShape(flatR)
 
   // 2. 切割出4个圆形的流道孔，分别位于上、下、左、右侧耳朵位置，对应实物图的4个小内通孔
-  const holeR = 20.5
+  const holeR = 24.0
   const holeRadius = 2.4
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const holePath = new THREE.Path()
@@ -410,7 +410,7 @@ function _makeWhiteGasketWithPatternBottom(name, zPos) {
   const shape = _makeCircleShape(flatR)
 
   // 2. 切割出4个圆形的流道孔，分别位于上、下、left、right侧耳朵位置，对应实物图的4个小内通孔
-  const holeR = 20.5
+  const holeR = 24.0
   const holeRadius = 2.4
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const holePath = new THREE.Path()
@@ -1305,7 +1305,7 @@ function _addPhotoCloverSealAt(parent, surfZ) {
 
   const holeMat = _makeSurfaceHoleMaterial(0x111111, side > 0 ? THREE.FrontSide : THREE.BackSide)
   const holeGeo = new THREE.CircleGeometry(2.4, 36)
-  const holeR = 20.5
+  const holeR = 24.0
   for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
     const hole = new THREE.Mesh(holeGeo, holeMat)
     hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, seal.position.z + side * 0.18)
