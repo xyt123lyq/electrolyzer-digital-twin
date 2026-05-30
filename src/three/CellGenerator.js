@@ -1153,7 +1153,7 @@ function _makeWavySealShape(radiusBase, radiusAmp, tubeWidth, steps = 120, inclu
   // 1. Calculate matching W_in, W_out, and r_port_outer
   let W_in
   if (usePhotoArc) {
-    W_in = 14.1 // Wider curved shoulders around the active area, matching the red reference arcs.
+    W_in = 16.2 // Wider curved shoulders around the active area, matching the red reference arcs.
   } else {
     W_in = radiusBase - 10.7 // For thin white gasket: windowSize + 10.2 - 10.7 = windowSize - 0.5 (approx 15.0)
   }
