@@ -763,6 +763,17 @@ function _makeThinWhite(name, zPos) {
   window.closePath()
   shape.holes.push(window)
 
+  // 2. 切割出4个圆形的流道孔，分别位于上、下、左、右侧耳朵位置，对应实物图的4个小内通孔
+  const holeR = 24.0
+  const holeRadius = 2.4
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    const holePath = new THREE.Path()
+    const px = Math.cos(a) * holeR
+    const py = Math.sin(a) * holeR
+    holePath.absarc(px, py, holeRadius, 0, Math.PI * 2, true)
+    shape.holes.push(holePath)
+  }
+
   const geo = new THREE.ExtrudeGeometry(shape, { depth: T - 0.3, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.15, bevelSegments: 3, curveSegments: 128 })
   geo.translate(0, 0, -T / 2)
   const disc = new THREE.Mesh(geo, mat)
@@ -775,6 +786,20 @@ function _makeThinWhite(name, zPos) {
   // 方形O-ring围绕方窗
   _addThinWhiteWindowPattern(group, windowSize, T / 2)
   _addThinWhiteWindowPattern(group, windowSize, -T / 2)
+
+  // 为4个流道孔在两面贴上黑底贴图以指示孔深，并保持与纹路中的圆弧同心
+  const holeGeo = new THREE.CircleGeometry(2.4, 36)
+  const surfaceMats = [
+    { z: T / 2, side: 1, mat: _makeSurfaceHoleMaterial(0x111111, THREE.FrontSide) },
+    { z: -T / 2, side: -1, mat: _makeSurfaceHoleMaterial(0x111111, THREE.BackSide) }
+  ]
+  for (const surface of surfaceMats) {
+    for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+      const hole = new THREE.Mesh(holeGeo, surface.mat)
+      hole.position.set(Math.cos(a) * holeR, Math.sin(a) * holeR, surface.z + surface.side * 0.04)
+      group.add(hole)
+    }
+  }
 
   _addBoltHoles(group, T, 8)
 
