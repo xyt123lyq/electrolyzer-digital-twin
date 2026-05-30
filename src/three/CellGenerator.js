@@ -696,9 +696,8 @@ function _makeBackingPlateShape(R, lugDir = 0) {
   return shape
 }
 
-function _makeFacePlateShape(R) {
-  const shape = new THREE.Shape()
-  shape.absarc(0, 0, R, 0, Math.PI * 2, false)
+function _makeFacePlateShape(R, lugDir = 0) {
+  const shape = _makeBackingPlateShape(R, lugDir)
   
   // Cutout 1: Central active area + horizontal branch channels
   const mainCutout = _makeCentralCutoutPath()
@@ -737,8 +736,8 @@ function _makeAnodePlate(name, zPos) {
   backingMesh.position.z = 0.175 // side = -1 for anode, so position.z = +0.175
   group.add(backingMesh)
 
-  // Face plate (thickness 0.35 mm) with cutouts
-  const faceShape = _makeFacePlateShape(R)
+  // Face plate (thickness 0.35 mm) with cutouts - NOW WITH EAR!
+  const faceShape = _makeFacePlateShape(R, -1)
   const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 128 })
   faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
   const faceMesh = new THREE.Mesh(faceGeo, mat)
@@ -780,8 +779,8 @@ function _makeCathodePlate(name, zPos) {
   backingMesh.position.z = -0.175 // side = 1 for cathode, so position.z = -0.175
   group.add(backingMesh)
 
-  // Face plate (thickness 0.35 mm) with cutouts
-  const faceShape = _makeFacePlateShape(R)
+  // Face plate (thickness 0.35 mm) with cutouts - NOW WITH EAR!
+  const faceShape = _makeFacePlateShape(R, 1)
   const faceGeo = new THREE.ExtrudeGeometry(faceShape, { depth: c.flowChannel.grooveDepth, bevelEnabled: false, curveSegments: 128 })
   faceGeo.translate(0, 0, -c.flowChannel.grooveDepth / 2)
   const faceMesh = new THREE.Mesh(faceGeo, mat)
