@@ -176,13 +176,16 @@ export const MaterialPresets = {
 
   // 气液接头 — 镀铬不锈钢: 高反射镜面
   gasPort() {
-    return new THREE.MeshStandardMaterial({
-      color: 0xd7d9d7,
-      metalness: 0.78,
-      roughness: 0.24,
-      envMapIntensity: 1.25,
-      emissive: 0x4a4d4d,
-      emissiveIntensity: 0.16
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      metalness: 0.94,
+      roughness: 0.06,
+      envMapIntensity: 3.5,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      reflectivity: 1.0,
+      emissive: 0x151515,
+      emissiveIntensity: 1.0
     })
   },
 

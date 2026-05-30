@@ -344,7 +344,7 @@ function _makePinkCover(name, isTop, zPos) {
     _addBrushedDiscLines(group, radius, T / 2 + 0.08, 0xd4a084)
 
     _addGasPorts(group, T / 2)
-    _addHexSocketPlug(group, 0, -22, T / 2 + 1.8)
+    _addHexSocketPlug(group, 0, -22, T / 2 + 0.6)
   } else {
     // ─────────────────────────────────────────────────────────────────────────────
     // BOTTOM COVER: Precise dual-layer stack for hex recesses & blind alignment holes
@@ -1622,17 +1622,18 @@ function _addMountingLugChamfer(parent, plateR, plateT, isAnode) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 气液接头
+// 气液接头 (快速插拔接头)
 // ─────────────────────────────────────────────────────────────────────────────
 function _addGasPorts(parent, portFaceZ) {
   const mat = MaterialPresets.gasPort()
-  const boreMat = new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 0.1, roughness: 0.9 })
+  const boreMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.0, roughness: 0.95 })
   const sealMat = new THREE.MeshPhysicalMaterial({
-    color: 0xe8e1d2,
+    color: 0xeae2d4,
     metalness: 0.0,
-    roughness: 0.66,
+    roughness: 0.85,
+    clearcoat: 0.1,
     transparent: true,
-    opacity: 0.78
+    opacity: 0.82
   })
 
   // 3 push-in fittings on upper half:
@@ -1649,70 +1650,117 @@ function _addGasPorts(parent, portFaceZ) {
 
   for (const p of fittings) {
     const sub = new THREE.Group()
-    const hexR = 6.2
-    const bodyR = 4.1
-    const bodyH = 10.5
 
-    const seal = new THREE.Mesh(new THREE.TorusGeometry(hexR + 1.4, 0.42, 8, 32), sealMat)
-    seal.position.z = portFaceZ + 0.24
+    // 1. Squeezed sealant tape ring under hex base
+    const seal = new THREE.Mesh(new THREE.TorusGeometry(7.0, 0.46, 12, 36), sealMat)
+    seal.scale.set(1, 1, 0.45)
+    seal.position.z = portFaceZ + 0.15
     sub.add(seal)
 
-    const flange = new THREE.Mesh(
-      new THREE.CylinderGeometry(hexR + 1, hexR + 1, 2, 36), mat)
-    flange.rotation.x = Math.PI / 2
-    flange.position.z = portFaceZ + 1
-    sub.add(flange)
+    // 2. Hexagonal Base (12mm AF hex nut)
+    const hexAF = 12.0
+    const circumR = (hexAF / 2) / Math.cos(Math.PI / 6)
+    const hexShape = new THREE.Shape()
+    for (let j = 0; j < 6; j++) {
+      const a = (j / 6) * Math.PI * 2
+      const hx = Math.cos(a) * circumR
+      const hy = Math.sin(a) * circumR
+      if (j === 0) hexShape.moveTo(hx, hy)
+      else hexShape.lineTo(hx, hy)
+    }
+    hexShape.closePath()
+    const hexGeo = new THREE.ExtrudeGeometry(hexShape, {
+      depth: 5.0,
+      bevelEnabled: true,
+      bevelThickness: 0.35,
+      bevelSize: 0.35,
+      bevelSegments: 3,
+      curveSegments: 16
+    })
+    hexGeo.translate(0, 0, 0.35) // offset for bevel
+    const hexBase = new THREE.Mesh(hexGeo, mat)
+    hexBase.position.z = portFaceZ
+    sub.add(hexBase)
 
-    const hexRadius = hexR / Math.cos(Math.PI / 6)
-    const hex = new THREE.Mesh(new THREE.CylinderGeometry(hexRadius, hexRadius, 7, 6), mat)
-    hex.rotation.x = Math.PI / 2
-    hex.position.z = portFaceZ + 4.5
-    sub.add(hex)
+    // 3. Slender Neck Cylinder (neck above hex base)
+    const neckR = 4.5
+    const neckH = 5.2
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(neckR, neckR, neckH, 48), mat)
+    neck.rotation.x = Math.PI / 2
+    neck.position.z = portFaceZ + 5.0 + neckH / 2
+    sub.add(neck)
 
-    const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(bodyR, bodyR, bodyH, 36), mat)
-    tube.rotation.x = Math.PI / 2
-    tube.position.z = portFaceZ + 5 + bodyH / 2
-    sub.add(tube)
+    // 4. Narrow Groove under top release sleeve
+    const grooveR = 4.1
+    const grooveH = 1.0
+    const groove = new THREE.Mesh(new THREE.CylinderGeometry(grooveR, grooveR, grooveH, 48), mat)
+    groove.rotation.x = Math.PI / 2
+    groove.position.z = portFaceZ + 5.0 + neckH + grooveH / 2
+    sub.add(groove)
 
-    const bore = new THREE.Mesh(
-      new THREE.CylinderGeometry(bodyR * 0.62, bodyR * 0.62, 0.45, 36), boreMat)
+    // 5. Beveled Top Release Collar (Release Sleeve Ring)
+    const collarR = 5.0
+    const innerR = 3.2
+    const collarShape = new THREE.Shape()
+    collarShape.absarc(0, 0, collarR, 0, Math.PI * 2, false)
+    const collarHole = new THREE.Path()
+    collarHole.absarc(0, 0, innerR, 0, Math.PI * 2, true)
+    collarShape.holes.push(collarHole)
+
+    const collarGeo = new THREE.ExtrudeGeometry(collarShape, {
+      depth: 2.8,
+      bevelEnabled: true,
+      bevelThickness: 0.45,
+      bevelSize: 0.45,
+      bevelSegments: 3,
+      curveSegments: 64
+    })
+    const collar = new THREE.Mesh(collarGeo, mat)
+    collar.position.z = portFaceZ + 5.0 + neckH + grooveH
+    sub.add(collar)
+
+    // 6. Deep Dark Hollow Channel inside collar
+    const boreH = 10.0
+    const bore = new THREE.Mesh(new THREE.CylinderGeometry(innerR - 0.05, innerR - 0.05, boreH, 36), boreMat)
     bore.rotation.x = Math.PI / 2
-    bore.position.z = portFaceZ + 5 + bodyH + 2.25
+    bore.position.z = portFaceZ + 5.0 + neckH + grooveH + 2.8 - boreH / 2
     sub.add(bore)
 
-    // Stainless steel cap
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(bodyR + 0.5, bodyR + 0.5, 2, 36), mat)
-    cap.rotation.x = Math.PI / 2
-    cap.position.z = portFaceZ + 5 + bodyH + 1
-    sub.add(cap)
+    // 7. Shiny Metal Gripper Teeth ring inside the bore to catch highlights
+    const gripperGeo = new THREE.TorusGeometry(innerR - 0.28, 0.22, 10, 32)
+    const gripper = new THREE.Mesh(gripperGeo, mat)
+    gripper.position.z = portFaceZ + 5.0 + neckH + grooveH + 2.8 - 0.8
+    sub.add(gripper)
 
     sub.position.set(p.x, p.y, 0)
     parent.add(sub)
   }
-
 }
 
 function _addHexSocketPlug(parent, x, y, z) {
   const mat = MaterialPresets.gasPort()
-  const boreMat = new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 0.1, roughness: 0.9 })
-  const plug = _makeHexSocketPlug(4.7, 3.5, mat, boreMat)
+  const boreMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.0, roughness: 0.95 })
+  const plug = _makeHexSocketPlug(4.8, 3.5, mat, boreMat)
   plug.position.set(x, y, z)
   parent.add(plug)
 
-  const sealMat = new THREE.MeshBasicMaterial({
-    color: 0xddd3c4,
+  const sealMat = new THREE.MeshPhysicalMaterial({
+    color: 0xeae2d4,
+    metalness: 0.0,
+    roughness: 0.85,
+    clearcoat: 0.1,
     transparent: true,
-    opacity: 0.45,
-    depthWrite: false
+    opacity: 0.82
   })
-  const seal = new THREE.Mesh(new THREE.TorusGeometry(5.3, 0.24, 8, 28), sealMat)
-  seal.position.set(x, y, z - 1.9)
+  // Position sealant perfectly at top cover face (z - 0.5 is T/2 + 0.1)
+  const seal = new THREE.Mesh(new THREE.TorusGeometry(5.0, 0.46, 12, 32), sealMat)
+  seal.scale.set(1, 1, 0.45)
+  seal.position.set(x, y, z - 0.5)
   parent.add(seal)
 }
 
 function _makeHexSocketPlug(radius, height, mat, boreMat) {
-  const socketR = 2.0
+  const socketR = 2.5
   const circumR = socketR / Math.cos(Math.PI / 6)
 
   const outer = new THREE.Shape()
@@ -1729,14 +1777,24 @@ function _makeHexSocketPlug(radius, height, mat, boreMat) {
   hole.closePath()
   outer.holes.push(hole)
 
-  const geo = new THREE.ExtrudeGeometry(outer, { depth: height, bevelEnabled: false })
-  geo.translate(0, 0, -height / 2)
+  // Use beveling for the plug to give it realistic shiny rounded metallic edges
+  const bevelT = 0.25
+  const geo = new THREE.ExtrudeGeometry(outer, {
+    depth: height - bevelT * 2,
+    bevelEnabled: true,
+    bevelThickness: bevelT,
+    bevelSize: bevelT,
+    bevelSegments: 3,
+    curveSegments: 64
+  })
+  geo.translate(0, 0, -height / 2 + bevelT)
   const mesh = new THREE.Mesh(geo, mat)
 
-  const bottomGeo = new THREE.CylinderGeometry(socketR, socketR, 0.5, 6)
+  // A deep dark shadow at the bottom of the hex socket
+  const bottomGeo = new THREE.CylinderGeometry(socketR - 0.05, socketR - 0.05, 0.6, 6)
   const bottom = new THREE.Mesh(bottomGeo, boreMat)
   bottom.rotation.x = Math.PI / 2
-  bottom.position.z = -height / 2 + 0.25
+  bottom.position.z = height / 2 - 2.8 // deep socket depth of 2.8mm
 
   const group = new THREE.Group()
   group.add(mesh, bottom)
